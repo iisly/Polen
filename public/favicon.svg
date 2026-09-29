@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- 웜 베이지 둥근 사각 바탕 (여백 최소화, 시인성 극대화) -->
+  <rect width="32" height="32" rx="7" fill="#5F7556"/>
+  
+  <!-- 선명하고 굵직한 화이트-베이지 보태니컬 잎새 심볼 (브라우저 탭에서 큼직하게 보임) -->
+  <path d="M16 4C16 4 8 10 8 18C8 22.4183 11.5817 26 16 26C20.4183 26 24 22.4183 24 18C24 10 16 4 16 4Z" fill="#FAF8F5"/>
+  <path d="M16 11V25" stroke="#5F7556" stroke-width="2.5" stroke-linecap="round"/>
+  
+  <!-- 큼직한 골드 옐로우 꽃가루 방울 -->
+  <circle cx="23" cy="8" r="3.2" fill="#E8B86D" stroke="#FAF8F5" stroke-width="1.2"/>
+</svg>

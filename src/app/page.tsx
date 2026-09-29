@@ -1,69 +1,131 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import Header from '@/components/Header';
+import KoreaMap from '@/components/KoreaMap';
+import PollenSummaryCard from '@/components/PollenSummaryCard';
+import AntihistamineGuide from '@/components/AntihistamineGuide';
+import PollenCalendar from '@/components/PollenCalendar';
+import ApiKeyModal from '@/components/ApiKeyModal';
+import { REGIONS } from '@/lib/constants';
+import { Region, PollenApiResponse } from '@/types/pollen';
+import { AlertCircle } from 'lucide-react';
 
 export default function Home() {
+  const [selectedRegion, setSelectedRegion] = useState<Region>(REGIONS[0]);
+  const [pollenData, setPollenData] = useState<PollenApiResponse | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [userApiKey, setUserApiKey] = useState<string>('');
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('kma_pollen_api_key');
+      if (saved) setUserApiKey(saved);
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  const fetchPollenData = useCallback(async (region: Region, apiKey: string) => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams({ areaNo: region.code });
+      if (apiKey) params.append('apiKey', apiKey);
+
+      const res = await fetch(`/api/pollen?${params.toString()}`);
+      const data: PollenApiResponse = await res.json();
+      setPollenData(data);
+    } catch (err: any) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPollenData(selectedRegion, userApiKey);
+  }, [selectedRegion, userApiKey, fetchPollenData]);
+
+  const handleSaveApiKey = (newKey: string) => {
+    setUserApiKey(newKey);
+    try {
+      if (newKey) {
+        localStorage.setItem('kma_pollen_api_key', newKey);
+      } else {
+        localStorage.removeItem('kma_pollen_api_key');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+    <div className="min-h-screen bg-[#FAF8F5] text-[#2D2A26] flex flex-col font-sans selection:bg-[#EAE4D9]">
+      {/* 헤더 */}
+      <Header
+        isLiveConnected={pollenData?.success ?? false}
+        forecastDate={pollenData?.forecastDate ?? '확인 중'}
+        onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+        onRefresh={() => fetchPollenData(selectedRegion, userApiKey)}
+        isLoading={isLoading}
+      />
+
+      {/* 메인 콘텐츠 영역 */}
+      <main className="flex-1 max-w-4xl w-full mx-auto px-5 py-6 sm:py-8 space-y-6">
+        {/* 기상청 데이터 미수신 시 은은하고 솔직한 안내 */}
+        {!pollenData?.success && pollenData?.error && (
+          <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-[#F6F1EC] border border-[#E9DFD7] text-xs text-[#7A6158]">
+            <AlertCircle className="w-4 h-4 text-[#A85848] shrink-0 mt-0.5" />
+            <div className="leading-relaxed">
+              <span className="font-semibold text-[#5A453F]">기상청 데이터를 불러오지 못했습니다.</span>{' '}
+              {pollenData.error} (비산기 및 데이터 부재로 위험지수는 0으로 표출됩니다.)
+            </div>
+          </div>
+        )}
+
+        {/* 1. 상단: 지도(좌) + 실시간 지수(우) 2열 나란한 일체형 배치 */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
+          {/* 좌측: 컴팩트한 한국 지도 */}
+          <div className="md:col-span-5 flex flex-col">
+            <KoreaMap
+              selectedRegion={selectedRegion}
+              onSelectRegion={(reg) => setSelectedRegion(reg)}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
+
+          {/* 우측: 선택 지역 종합 위험도 & 3대 수종 현황 */}
+          <div className="md:col-span-7 flex flex-col">
+            {pollenData && (
+              <PollenSummaryCard
+                maxTodayRisk={pollenData.maxTodayRisk}
+                items={pollenData.items}
+                region={pollenData.region}
+                forecastDate={pollenData.forecastDate}
+              />
+            )}
+          </div>
         </div>
+
+        {/* 2. 항히스타민제 복용 가이드 보드 */}
+        <AntihistamineGuide />
+
+        {/* 3. 연간 12개월 꽃가루 달력 */}
+        <PollenCalendar />
       </main>
+
+      {/* 미니멀 푸터 */}
+      <footer className="border-t border-[#ECE7DE] py-6 text-center text-xs text-[#9E958C]">
+        <p>출처: 공공데이터포털 기상청_꽃가루농도위험지수 조회서비스(3.0)</p>
+      </footer>
+
+      {/* API 키 모달 */}
+      <ApiKeyModal
+        isOpen={isApiKeyModalOpen}
+        onClose={() => setIsApiKeyModalOpen(false)}
+        onSaveKey={handleSaveApiKey}
+        currentKey={userApiKey}
+      />
     </div>
   );
 }

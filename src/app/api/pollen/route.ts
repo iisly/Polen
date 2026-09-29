@@ -123,6 +123,23 @@ export async function GET(request: NextRequest) {
 
         const data = await res.json();
         const header = data?.response?.header;
+
+        // resultCode '99': "해당지수자료 제공기간이 아닙니다" (예: 가을철 참나무/소나무)
+        // 이는 에러가 아니라 해당 수종의 비산기가 아님을 의미하는 정상 응답입니다.
+        if (header?.resultCode === '99') {
+          return {
+            type,
+            name: POLLEN_SPECIES_INFO[type].name,
+            season: POLLEN_SPECIES_INFO[type].seasonText,
+            isActiveSeason: false,
+            today: 0 as RiskLevel,
+            tomorrow: 0 as RiskLevel,
+            dayAfterTomorrow: 0 as RiskLevel,
+            twoDaysAfterTomorrow: 0 as RiskLevel,
+            dateStr: timeStr,
+          };
+        }
+
         if (header?.resultCode !== '00') {
           throw new Error(header?.resultMsg || '응답 오류');
         }
@@ -133,19 +150,24 @@ export async function GET(request: NextRequest) {
         }
 
         const parseVal = (val: any): RiskLevel => {
+          if (val === undefined || val === null || val === '') return 0;
           const num = parseInt(String(val), 10);
           if (isNaN(num) || num < 0) return 0;
           if (num > 3) return 3;
           return num as RiskLevel;
         };
 
+        const todayVal = parseVal(item.today);
+        const tomorrowVal = parseVal(item.tomorrow);
+
         const forecastItem: PollenForecastItem = {
           type,
           name: POLLEN_SPECIES_INFO[type].name,
           season: POLLEN_SPECIES_INFO[type].seasonText,
           isActiveSeason: POLLEN_SPECIES_INFO[type].seasonMonths.includes(currentMonthNum),
-          today: parseVal(item.today),
-          tomorrow: parseVal(item.tomorrow),
+          // 18시 이후 오늘 관측이 마감되어 빈 문자열("")로 올 경우 내일 예보 또는 0으로 보정
+          today: item.today === '' ? tomorrowVal : todayVal,
+          tomorrow: tomorrowVal,
           dayAfterTomorrow: parseVal(item.dayaftertomorrow),
           twoDaysAfterTomorrow: parseVal(item.twodaysaftertomorrow),
           dateStr: item.date,

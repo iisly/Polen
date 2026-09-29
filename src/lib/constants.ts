@@ -30,19 +30,19 @@ export const POLLEN_SPECIES_INFO: Record<PollenType, {
     name: '참나무',
     seasonText: '4월 ~ 6월 (봄철 수목류)',
     seasonMonths: [4, 5, 6],
-    endpoint: 'getOakPollenRiskIdx',
+    endpoint: 'getOakPollenRiskIdxV3',
   },
   pine: {
     name: '소나무 (송홧가루)',
     seasonText: '4월 ~ 6월 (봄철 송홧가루)',
     seasonMonths: [4, 5, 6],
-    endpoint: 'getPinePollenRiskIdx',
+    endpoint: 'getPinePollenRiskIdxV3',
   },
   weeds: {
     name: '잡초류 (돼지풀·환삼덩굴·쑥)',
     seasonText: '8월 ~ 10월 (가을철 초본류)',
     seasonMonths: [8, 9, 10],
-    endpoint: 'getWeedsPollenRiskndx',
+    endpoint: 'getWeedsPollenRiskndxV3',
   },
 };
 

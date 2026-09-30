@@ -14,18 +14,18 @@ export default function Icon() {
           width: '100%',
           height: '100%',
           display: 'flex',
-          position: 'relative',
+          alignItems: 'center',
+          justifyContent: 'center',
           backgroundColor: '#F2ECE1',
           borderRadius: '8px',
           border: '1px solid #DDD5C7',
-          padding: '6px',
         }}
       >
-        {/* 좌측 상단 초록 점 */}
+        {/* 중앙 정렬된 초록 점 */}
         <div
           style={{
-            width: '9px',
-            height: '9px',
+            width: '12px',
+            height: '12px',
             borderRadius: '50%',
             backgroundColor: '#5F7556',
           }}

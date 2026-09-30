@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <!-- 웜 베이지 둥근 사각 타일 -->
+  <!-- 웜 베이지 둥근 사각 타일 바탕 -->
   <rect x="1" y="1" width="30" height="30" rx="8" fill="#F2ECE1" stroke="#DDD5C7" stroke-width="1.5"/>
-  <!-- 좌측 상단 시그니처 세이지 그린 도트 -->
-  <circle cx="10" cy="10" r="4.5" fill="#5F7556"/>
+  <!-- 중앙에 배치된 시그니처 세이지 그린 도트 -->
+  <circle cx="16" cy="16" r="6" fill="#5F7556"/>
 </svg>

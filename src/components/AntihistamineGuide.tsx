@@ -9,7 +9,7 @@ export default function AntihistamineGuide() {
   const meds = {
     cetirizine: {
       name: '세티리진',
-      brand: '지르텍 · 코세티 등',
+      brand: '지르텍 · 쎄르텍 등',
       tag: '빠르고 확실한 증상 억제',
       badge: '저녁/취침 전 복용 권장',
       onset: '복용 후 30분~1시간 내 효과 발현',

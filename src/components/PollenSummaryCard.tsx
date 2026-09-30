@@ -79,8 +79,8 @@ export default function PollenSummaryCard({
   ];
 
   const speciesList: { key: PollenType; label: string; season: string }[] = [
-    { key: 'oak', label: '참나무', season: '봄 (4~6월)' },
-    { key: 'pine', label: '소나무', season: '봄 (4~6월)' },
+    { key: 'oak', label: '참나무', season: '봄 (3~6월)' },
+    { key: 'pine', label: '소나무', season: '봄 (3~6월)' },
     { key: 'weeds', label: '잡초류', season: '가을 (8~10월)' },
   ];
 

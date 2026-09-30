@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { REGIONS } from '@/lib/constants';
 import { Region, RiskLevel } from '@/types/pollen';
 import { KOREA_PROVINCE_PATHS } from '@/lib/koreaProvincePaths';
-import { Navigation } from 'lucide-react';
 
 interface KoreaMapProps {
   selectedRegion: Region;
@@ -18,7 +17,6 @@ export default function KoreaMap({
   regionalRisks = {},
 }: KoreaMapProps) {
   const [hoveredCode, setHoveredCode] = useState<string | null>(null);
-  const [isLocating, setIsLocating] = useState(false);
 
   // 기상청 실시간 위험 단계별 조각 채색 (웜 미니멀리즘 팔레트)
   const getRiskFillColor = (code: string) => {
@@ -37,79 +35,34 @@ export default function KoreaMap({
     }
   };
 
-  const handleDetectLocation = () => {
-    if (!navigator.geolocation) {
-      alert('위치 서비스를 지원하지 않는 브라우저입니다.');
-      return;
-    }
-
-    setIsLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const userLat = pos.coords.latitude;
-        const userLng = pos.coords.longitude;
-
-        let closest = REGIONS[0];
-        let minD = Infinity;
-
-        REGIONS.forEach((r) => {
-          const d = Math.hypot(r.lat - userLat, r.lng - userLng);
-          if (d < minD) {
-            minD = d;
-            closest = r;
-          }
-        });
-
-        onSelectRegion(closest);
-        setIsLocating(false);
-      },
-      () => {
-        setIsLocating(false);
-        alert('위치 정보를 가져올 수 없습니다.');
-      },
-      { timeout: 5000 }
-    );
-  };
+  // 선택된 지역이 맨 위에 렌더링되도록 정렬 (테두리 하이라이트 보호)
+  const sortedProvinces = [...KOREA_PROVINCE_PATHS].sort((a, b) => {
+    if (a.code === selectedRegion.code) return 1;
+    if (b.code === selectedRegion.code) return -1;
+    return 0;
+  });
 
   return (
-    <div className="bg-white border border-[#ECE7DE] rounded-2xl p-4 sm:p-6 flex flex-col justify-between h-full shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-3">
-      {/* 헤더 */}
-      <div className="flex items-center justify-between border-b border-[#F4EFE6] pb-3">
-        <div>
-          <span className="font-bold text-[#2D2A26] text-sm sm:text-base">
-            지역 선택
-          </span>
-          <span className="text-xs text-[#7A726A] ml-2 font-medium">
-            (행정구역 클릭 시 변경)
-          </span>
-        </div>
-        <button
-          onClick={handleDetectLocation}
-          disabled={isLocating}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FAF8F5] border border-[#E5DFD4] hover:bg-[#F2ECE1] rounded-lg text-[#4A443E] transition text-xs font-semibold"
-        >
-          <Navigation className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
-          <span>{isLocating ? '확인 중' : '내 위치'}</span>
-        </button>
-      </div>
-
-      {/* 정밀 지리 좌표 기반 대한민국 17개 광역시도 지도 */}
-      <div className="w-full max-w-[290px] aspect-[3/4] relative mx-auto my-auto flex items-center justify-center">
+    <div className="bg-white border border-[#ECE7DE] rounded-2xl p-3 sm:p-5 flex flex-col justify-between h-full shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-2">
+      {/* 넉넉하고 시원한 정밀 지리 좌표 기반 대한민국 17개 광역시도 지도 */}
+      <div className="w-full max-w-[320px] aspect-[3/4] relative mx-auto my-auto flex items-center justify-center py-1">
         <svg
           viewBox="0 0 300 380"
           className="w-full h-full select-none"
         >
-          {/* 동해 바다 울릉도 & 독도 */}
-          <g className="cursor-default opacity-80">
-            <circle cx="258" cy="110" r="3.5" fill="#D5CFC5" stroke="#C2BAB0" strokeWidth="0.8" />
-            <circle cx="274" cy="116" r="2" fill="#D5CFC5" stroke="#C2BAB0" strokeWidth="0.8" />
+          {/* 동해 울릉도 & 독도 */}
+          <g className="cursor-default opacity-85">
+            <circle cx="278" cy="112" r="3.2" fill="#D5CFC5" stroke="#C2BAB0" strokeWidth="0.8" />
+            <circle cx="293" cy="117" r="1.8" fill="#D5CFC5" stroke="#C2BAB0" strokeWidth="0.8" />
           </g>
 
           {/* 17개 광역시도 정밀 폴리곤 영역 */}
-          {KOREA_PROVINCE_PATHS.map((prov) => {
+          {sortedProvinces.map((prov) => {
             const isSelected = selectedRegion.code === prov.code;
             const isHovered = hoveredCode === prov.code;
             const fillColor = getRiskFillColor(prov.code);
+
+            const isSmallMetropolis = ['1100000000', '3611000000', '3000000000', '2900000000', '2700000000', '3100000000', '2600000000'].includes(prov.code);
 
             return (
               <g
@@ -126,39 +79,34 @@ export default function KoreaMap({
                 <path
                   d={prov.d}
                   fill={fillColor}
-                  stroke={isSelected ? '#485941' : isHovered ? '#7A7264' : '#C8C1B4'}
-                  strokeWidth={isSelected ? 2.5 : isHovered ? 1.6 : 0.9}
+                  stroke={isSelected ? '#354830' : isHovered ? '#736B5E' : '#C7BFB1'}
+                  strokeWidth={isSelected ? 2.6 : isHovered ? 1.5 : 0.8}
                   strokeLinejoin="round"
                   className="transition-colors duration-150"
                   style={{
-                    filter: isSelected ? 'drop-shadow(0 2px 5px rgba(72,89,65,0.35))' : undefined,
+                    filter: isSelected ? 'drop-shadow(0 2px 6px rgba(53,72,48,0.4))' : undefined,
                   }}
                 />
 
-                {/* 선택 시 은은한 핀 도트 */}
-                {isSelected && (
-                  <circle
-                    cx={prov.cx}
-                    cy={prov.cy}
-                    r="3.5"
-                    fill="#485941"
-                    stroke="#FFFFFF"
-                    strokeWidth="1.2"
-                  />
-                )}
-
-                {/* 지명 텍스트 라벨 */}
+                {/* 지명 텍스트 라벨 (진짜 정중앙 정렬 + 흰색 외곽선 헤일로) */}
                 <text
                   x={prov.cx}
-                  y={prov.cy + (isSelected ? 12 : 3.5)}
+                  y={prov.cy}
                   textAnchor="middle"
-                  className={`text-[10.5px] select-none pointer-events-none transition-all ${
+                  dominantBaseline="central"
+                  style={{
+                    paintOrder: 'stroke fill',
+                    stroke: '#FAF8F5',
+                    strokeWidth: isSelected ? '3.5px' : '2.8px',
+                    strokeLinejoin: 'round',
+                  }}
+                  className={`select-none pointer-events-none transition-all ${
                     isSelected
-                      ? 'fill-[#1F1D1A] font-black text-[11.5px]'
+                      ? 'fill-[#141312] font-black'
                       : isHovered
-                      ? 'fill-[#1F1D1A] font-bold'
-                      : 'fill-[#544E47] font-semibold'
-                  }`}
+                      ? 'fill-[#1F1D1A] font-extrabold'
+                      : 'fill-[#3A3530] font-bold'
+                  } ${isSmallMetropolis ? 'text-[10px]' : 'text-[11px]'}`}
                 >
                   {prov.shortName}
                 </text>

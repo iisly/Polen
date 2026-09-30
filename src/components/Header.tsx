@@ -40,7 +40,7 @@ export default function Header({
           <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[#F0ECE4] text-[#4A443E]">
             <span className={`w-2 h-2 rounded-full ${isLiveConnected ? 'bg-[#5F7556]' : 'bg-[#C28C7E]'}`} />
             <span className="text-xs font-medium">
-              {isLiveConnected ? '기상청 실시간' : '기상청 미연결 (0 표출)'}
+              {isLiveConnected ? '기상청 실시간' : '기상청 미연결'}
             </span>
           </div>
 

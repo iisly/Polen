@@ -203,56 +203,6 @@ export default function PollenSummaryCard({
           })}
         </div>
       </div>
-
-      {/* 진정한 3일간 추이 타임라인 카드 (클릭 시 해당 일자로 즉시 전환) */}
-      <div className="space-y-2 pt-1 border-t border-[#F5F2EB]">
-        <div className="flex items-center justify-between text-xs font-bold text-[#544E47]">
-          <span>3일간 추이 타임라인</span>
-          <span className="text-[11px] text-[#8C827A] font-medium">탭 클릭 시 해당일 선택</span>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2">
-          {days.map((d) => {
-            const isSelected = selectedDay === d.key;
-            const dayStatus = getRiskInfo(d.risk);
-            const barWidthPercent = d.risk === 0 ? 15 : ((d.risk + 1) / 4) * 100;
-
-            return (
-              <button
-                key={d.key}
-                onClick={() => setSelectedDay(d.key)}
-                className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between ${
-                  isSelected
-                    ? 'border-[#5F7556] bg-[#FAF8F5] ring-1 ring-[#5F7556]/30 shadow-xs'
-                    : 'border-[#EDE8E0] bg-white hover:bg-[#F9F7F3]'
-                }`}
-              >
-                <div className="flex items-center justify-between gap-1 mb-1.5">
-                  <span className="text-xs sm:text-sm font-bold text-[#1F1D1A] whitespace-nowrap">
-                    {d.label}
-                  </span>
-                  <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${
-                    d.risk === 0 ? 'bg-[#EDE9E1] text-[#544E47]' : 'bg-[#F7ECE9] text-[#9E3622]'
-                  }`}>
-                    {d.risk}단계 · {dayStatus.title}
-                  </span>
-                </div>
-
-                {/* 해당 일자의 전용 게이지 바 */}
-                <div className="w-full h-1.5 bg-[#EDE8E0] rounded-full overflow-hidden mt-1">
-                  <div
-                    className="h-full rounded-full transition-all duration-300"
-                    style={{
-                      width: `${barWidthPercent}%`,
-                      backgroundColor: dayStatus.barColor,
-                    }}
-                  />
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }

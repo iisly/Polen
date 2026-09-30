@@ -72,7 +72,7 @@ export default function Home() {
       />
 
       {/* 메인 콘텐츠 영역 */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-5 py-6 sm:py-8 space-y-6">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
         {/* 기상청 데이터 미수신 시 은은하고 솔직한 안내 */}
         {!pollenData?.success && pollenData?.error && (
           <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-[#F6F1EC] border border-[#E9DFD7] text-xs text-[#7A6158]">
@@ -84,10 +84,10 @@ export default function Home() {
           </div>
         )}
 
-        {/* 1. 상단: 지도(좌) + 실시간 지수(우) 2열 나란한 일체형 배치 */}
+        {/* 1. 상단: 지도(좌) + 실시간 지수(우) 균형 잡힌 6:6 분할 배치 */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
-          {/* 좌측: 컴팩트한 한국 지도 */}
-          <div className="md:col-span-5 flex flex-col">
+          {/* 좌측: 대형 한국 지도 보드 */}
+          <div className="md:col-span-6 flex flex-col">
             <KoreaMap
               selectedRegion={selectedRegion}
               onSelectRegion={(reg) => setSelectedRegion(reg)}
@@ -99,7 +99,7 @@ export default function Home() {
           </div>
 
           {/* 우측: 선택 지역 종합 위험도 & 3대 수종 현황 */}
-          <div className="md:col-span-7 flex flex-col">
+          <div className="md:col-span-6 flex flex-col">
             {pollenData && (
               <PollenSummaryCard
                 maxTodayRisk={pollenData.maxTodayRisk}

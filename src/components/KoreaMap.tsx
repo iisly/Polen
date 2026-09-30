@@ -116,20 +116,40 @@ export default function KoreaMap({
   });
 
   return (
-    <div className="bg-white border border-[#ECE7DE] rounded-2xl p-3 sm:p-5 flex flex-col justify-between h-full shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-2 relative">
-      {/* 🧭 내 위치 플로팅 버튼 (우측 상단 바다 위에 컴팩트하게 부유) */}
+    <div className="bg-white border border-[#ECE7DE] rounded-2xl p-2 sm:p-4 flex flex-col justify-center items-center h-full shadow-[0_2px_8px_rgba(0,0,0,0.02)] relative overflow-hidden min-h-[380px] sm:min-h-[460px]">
+      {/* 🧭 내 위치 플로팅 버튼 (우측 상단 바다 위에 부유) */}
       <button
         onClick={handleDetectLocation}
         disabled={isLocating}
-        className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-md border border-[#E0D9CD] hover:bg-white hover:border-[#BCB3A4] active:scale-95 rounded-xl text-[#3A3530] shadow-xs transition text-xs font-bold"
+        className="absolute top-3 right-3 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-md border border-[#E0D9CD] hover:bg-white hover:border-[#BCB3A4] active:scale-95 rounded-xl text-[#3A3530] shadow-xs transition text-xs font-bold"
         title="GPS로 내 위치 찾기"
       >
         <Navigation className={`w-3.5 h-3.5 text-[#5F7556] ${isLocating ? 'animate-spin' : ''}`} />
         <span>{isLocating ? '위치 탐색 중' : '내 위치'}</span>
       </button>
 
-      {/* 업계 표준 @svg-maps/south-korea 기반 대한민국 17개 광역시도 정밀 벡터 지도 */}
-      <div className="w-full max-w-[340px] aspect-[524/631] relative mx-auto my-auto flex items-center justify-center py-1">
+      {/* 🎨 위험도 단계 플로팅 인디케이터 (좌측 하단 서해 바다 위에 컴팩트하게 부유하여 지도 공간 100% 확보) */}
+      <div className="absolute bottom-3 left-3 z-20 flex items-center gap-2 sm:gap-2.5 px-2.5 py-1.5 bg-white/90 backdrop-blur-md border border-[#E0D9CD] rounded-xl shadow-xs text-[10px] sm:text-[11px] text-[#544E47] font-bold">
+        <div className="flex items-center gap-1">
+          <span className="w-2.5 h-2.5 rounded-xs bg-[#EDE8DF] border border-[#DDD7CD]" />
+          <span>0 낮음</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="w-2.5 h-2.5 rounded-xs bg-[#E5D3A6] border border-[#D5C293]" />
+          <span>1 보통</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="w-2.5 h-2.5 rounded-xs bg-[#DF9F86] border border-[#CF8E75]" />
+          <span>2 높음</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="w-2.5 h-2.5 rounded-xs bg-[#C86350] border border-[#B75340]" />
+          <span>3 매우높음</span>
+        </div>
+      </div>
+
+      {/* 업계 표준 @svg-maps/south-korea 기반 대한민국 17개 광역시도 대형 정밀 벡터 지도 */}
+      <div className="w-full h-full max-w-[420px] aspect-[524/631] relative mx-auto my-auto flex items-center justify-center p-1 sm:p-2">
         <svg
           viewBox={koreaMap.viewBox || '0 0 524 631'}
           className="w-full h-full select-none"
@@ -204,26 +224,6 @@ export default function KoreaMap({
             })}
           </g>
         </svg>
-      </div>
-
-      {/* 지도 하단 단계별 색상 범례 */}
-      <div className="pt-2 border-t border-[#F5F2EB] flex items-center justify-between text-[11px] sm:text-xs text-[#7A726A] font-medium px-1">
-        <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-sm bg-[#EDE8DF] border border-[#DDD7CD]" />
-          <span>0 낮음</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-sm bg-[#E5D3A6] border border-[#D5C293]" />
-          <span>1 보통</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-sm bg-[#DF9F86] border border-[#CF8E75]" />
-          <span>2 높음</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-sm bg-[#C86350] border border-[#B75340]" />
-          <span>3 매우높음</span>
-        </div>
       </div>
     </div>
   );

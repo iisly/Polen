@@ -28,14 +28,14 @@ export const POLLEN_SPECIES_INFO: Record<PollenType, {
 }> = {
   oak: {
     name: '참나무',
-    seasonText: '4월 ~ 6월 (봄철 수목류)',
-    seasonMonths: [4, 5, 6],
+    seasonText: '3월 ~ 6월 (봄철 수목류)',
+    seasonMonths: [3, 4, 5, 6],
     endpoint: 'getOakPollenRiskIdxV3',
   },
   pine: {
     name: '소나무 (송홧가루)',
-    seasonText: '4월 ~ 6월 (봄철 송홧가루)',
-    seasonMonths: [4, 5, 6],
+    seasonText: '3월 ~ 6월 (봄철 송홧가루)',
+    seasonMonths: [3, 4, 5, 6],
     endpoint: 'getPinePollenRiskIdxV3',
   },
   weeds: {

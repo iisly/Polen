@@ -195,7 +195,7 @@ export default function PollenSummaryCard({
                     {risk}
                   </span>
                   <span className="text-[11px] sm:text-xs font-semibold text-[#7A726A] whitespace-nowrap">
-                    {isActive ? '단계' : '비산기외'}
+                    {isActive ? '단계' : '(비산기외)'}
                   </span>
                 </div>
               </div>

@@ -259,28 +259,68 @@ export default function PollenSummaryCard({
         </div>
       </div>
 
-      {/* 기상청 공식 단계별 대응요령 아코디언 / 표 */}
+      {/* 기상청 공식 단계별 대응요령 모달 호출 버튼 */}
       <div className="pt-2 border-t border-[#F2ECE1]">
         <button
-          onClick={() => setShowGuidelines(!showGuidelines)}
-          className="w-full flex items-center justify-between py-2 text-xs sm:text-sm font-semibold text-[#635C54] hover:text-[#1F1D1A] transition-colors"
+          type="button"
+          onClick={() => setShowGuidelines(true)}
+          className="w-full py-2 px-3 rounded-xl bg-[#FAF8F5] hover:bg-[#F2EDE4] border border-[#ECE7DE] flex items-center justify-between text-xs sm:text-sm font-semibold text-[#544E47] hover:text-[#1F1D1A] transition-all group"
         >
           <span className="flex items-center gap-1.5">
-            📋 <span>기상청 단계별 대응요령 안내</span>
+            <span>📋</span>
+            <span>기상청 단계별 대응요령 안내</span>
           </span>
-          <span className="text-xs text-[#8C827A] flex items-center gap-1 font-normal">
-            {showGuidelines ? '접기 ▲' : '자세히 보기 ▼'}
+          <span className="text-xs text-[#8C827A] group-hover:text-[#4A443E] flex items-center gap-1">
+            <span>확인하기</span>
+            <span className="text-sm font-bold">›</span>
           </span>
         </button>
+      </div>
 
-        {showGuidelines && (
-          <div className="mt-2.5 space-y-3 bg-[#FAF8F5] border border-[#ECE7DE] rounded-xl p-3 sm:p-4 text-xs">
-            <div className="overflow-x-auto">
+      {/* 대시보드를 해치지 않고 스윽 뜨는 공식 대응요령 모달 */}
+      {showGuidelines && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+          onClick={() => setShowGuidelines(false)}
+        >
+          <div
+            className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-[#ECE7DE] p-5 sm:p-6 flex flex-col max-h-[90vh] overflow-hidden transition-all transform animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 모달 헤더 */}
+            <div className="flex items-center justify-between pb-3 border-b border-[#ECE7DE]">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">📋</span>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-[#1F1D1A]">
+                    기상청 꽃가루 위험지수 단계별 대응요령
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-[#8C827A]">
+                    현재 선택: {days.find((d) => d.key === selectedDay)?.label} ({dayRisk}단계 {status.title})
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGuidelines(false)}
+                className="p-1.5 rounded-lg text-[#8C827A] hover:text-[#1F1D1A] hover:bg-[#FAF8F5] transition-colors"
+                aria-label="닫기"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* 모달 본문 - 대응요령 테이블 */}
+            <div className="mt-4 overflow-y-auto pr-1">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-[#E5DFD3] text-[#7A726A] text-[11px] sm:text-xs">
-                    <th className="py-1.5 px-2 font-semibold w-24">단계</th>
-                    <th className="py-1.5 px-2 font-semibold">대응요령</th>
+                    <th className="py-2 px-2.5 font-semibold w-24">단계</th>
+                    <th className="py-2 px-2.5 font-semibold">대응요령</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#EFEAE1]">
@@ -290,20 +330,20 @@ export default function PollenSummaryCard({
                       <tr
                         key={item.step}
                         className={`transition-colors ${
-                          isSelected ? 'bg-[#F2EDE4]/80 font-medium' : ''
+                          isSelected ? 'bg-[#FAF4ED] font-medium' : ''
                         }`}
                       >
-                        <td className="py-2.5 px-2 align-top whitespace-nowrap">
+                        <td className="py-3 px-2.5 align-top whitespace-nowrap">
                           <span
                             className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold border ${item.badgeClass}`}
                           >
                             {item.step}
                           </span>
-                          <span className="block text-[10px] text-[#8C827A] mt-0.5">
+                          <span className="block text-[11px] text-[#8C827A] mt-1">
                             {item.range}
                           </span>
                         </td>
-                        <td className="py-2.5 px-2 align-top text-[#4A443E] leading-relaxed text-[11px] sm:text-xs">
+                        <td className="py-3 px-2.5 align-top text-[#4A443E] leading-relaxed text-xs sm:text-[13px]">
                           <ul className="list-disc list-inside space-y-1">
                             {item.tips.map((tip, idx) => (
                               <li key={idx} className="leading-snug">
@@ -319,12 +359,22 @@ export default function PollenSummaryCard({
               </table>
             </div>
 
-            <div className="pt-2 border-t border-[#EAE5DC] text-[10px] sm:text-[11px] text-[#8C827A] leading-relaxed">
-              <p>※ 의학자문: 서울대학병원 운영 서울특별시 보라매 병원 내과 김덕겸, 허응영 서울의대 교수</p>
+            {/* 모달 하단 - 의학자문 및 닫기 버튼 */}
+            <div className="pt-3.5 mt-3 border-t border-[#ECE7DE] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px] text-[#8C827A]">
+              <p className="leading-relaxed">
+                ※ 의학자문: 서울대학병원 운영 서울특별시 보라매 병원 내과 김덕겸, 허응영 서울의대 교수
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowGuidelines(false)}
+                className="py-1.5 px-4 rounded-lg bg-[#38332E] hover:bg-[#1F1D1A] text-white text-xs font-semibold self-end sm:self-auto transition-colors"
+              >
+                닫기
+              </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

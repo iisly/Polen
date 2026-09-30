@@ -34,6 +34,12 @@ export interface Region {
   lng: number;
 }
 
+export interface RegionalDailyRisks {
+  today: Record<string, RiskLevel>;
+  tomorrow: Record<string, RiskLevel>;
+  dayAfterTomorrow: Record<string, RiskLevel>;
+}
+
 export interface PollenApiResponse {
   success: boolean;
   isOffSeason: boolean;
@@ -44,6 +50,7 @@ export interface PollenApiResponse {
   maxTodayRisk: RiskLevel;
   message?: string;
   regionalRisks?: Record<string, RiskLevel>;
+  regionalDailyRisks?: RegionalDailyRisks;
 }
 
 export interface PatientTip {

@@ -77,10 +77,10 @@ export default function PollenCalendar() {
           return (
             <div
               key={item.month}
-              className={`p-3 rounded-xl border transition-all flex flex-col justify-between ${
+              className={`p-3 rounded-xl border flex flex-col justify-between ${
                 isThisMonth
                   ? 'border-[#5F7556] bg-[#FAF8F5] ring-1 ring-[#5F7556]/30 shadow-xs'
-                  : 'border-[#EDE8E0] bg-white hover:bg-[#FAF8F5]'
+                  : 'border-[#EDE8E0] bg-white'
               }`}
             >
               <div className="flex items-center justify-between gap-1 mb-1.5">

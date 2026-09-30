@@ -8,16 +8,25 @@ interface PollenSummaryCardProps {
   items: Record<PollenType, PollenForecastItem>;
   region: Region;
   forecastDate: string;
+  selectedDay?: 'today' | 'tomorrow' | 'dayAfterTomorrow';
+  onSelectDay?: (day: 'today' | 'tomorrow' | 'dayAfterTomorrow') => void;
 }
 
-type ForecastDay = 'today' | 'tomorrow' | 'dayAfterTomorrow';
+export type ForecastDay = 'today' | 'tomorrow' | 'dayAfterTomorrow';
 
 export default function PollenSummaryCard({
   items,
   region,
   forecastDate,
+  selectedDay: controlledSelectedDay,
+  onSelectDay,
 }: PollenSummaryCardProps) {
-  const [selectedDay, setSelectedDay] = useState<ForecastDay>('today');
+  const [internalDay, setInternalDay] = useState<ForecastDay>('today');
+  const selectedDay = controlledSelectedDay ?? internalDay;
+  const setSelectedDay = (day: ForecastDay) => {
+    if (onSelectDay) onSelectDay(day);
+    else setInternalDay(day);
+  };
 
   const getSpeciesRisk = (type: PollenType, day: ForecastDay): RiskLevel => {
     const item = items[type];

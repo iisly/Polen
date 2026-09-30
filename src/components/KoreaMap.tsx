@@ -10,6 +10,7 @@ interface KoreaMapProps {
   selectedRegion: Region;
   onSelectRegion: (region: Region) => void;
   regionalRisks?: Record<string, RiskLevel>;
+  selectedDay?: 'today' | 'tomorrow' | 'dayAfterTomorrow';
 }
 
 // @svg-maps/south-korea location.id -> 기상청 행정구역코드(10자리) 및 정밀 라벨 좌표 (viewBox 0 0 524 631 기준)
@@ -25,7 +26,7 @@ const LOCATION_META: Record<string, RegionMeta> = {
   seoul: { code: '1100000000', shortName: '서울', labelX: 152, labelY: 127, isMetropolis: true },
   gyeonggi: { code: '4100000000', shortName: '경기', labelX: 175, labelY: 88 },
   incheon: { code: '2800000000', shortName: '인천', labelX: 106, labelY: 135, isMetropolis: true },
-  gangwon: { code: '4200000000', shortName: '강원', labelX: 275, labelY: 95 },
+  gangwon: { code: '5100000000', shortName: '강원', labelX: 275, labelY: 95 },
   // 충북: 청주-충주 내륙 본토 정중앙 안착 (기존 243, 235는 경북 문경 이탈 문제 해결)
   'north-chungcheong': { code: '4300000000', shortName: '충북', labelX: 215, labelY: 205 },
   // 충남: 서산-홍성-예산 중심
@@ -41,7 +42,7 @@ const LOCATION_META: Record<string, RegionMeta> = {
   // 부산: 경남/바다에 가려지지 않도록 부산 중심부 정밀 배치
   busan: { code: '2600000000', shortName: '부산', labelX: 348, labelY: 398, isMetropolis: true },
   'south-gyeongsang': { code: '4800000000', shortName: '경남', labelX: 275, labelY: 400 },
-  'north-jeolla': { code: '4500000000', shortName: '전북', labelX: 165, labelY: 345 },
+  'north-jeolla': { code: '5200000000', shortName: '전북', labelX: 165, labelY: 345 },
   gwangju: { code: '2900000000', shortName: '광주', labelX: 140, labelY: 408, isMetropolis: true },
   'south-jeolla': { code: '4600000000', shortName: '전남', labelX: 135, labelY: 455 },
   jeju: { code: '5000000000', shortName: '제주', labelX: 112, labelY: 609 },
@@ -51,9 +52,12 @@ export default function KoreaMap({
   selectedRegion,
   onSelectRegion,
   regionalRisks = {},
+  selectedDay = 'today',
 }: KoreaMapProps) {
   const [hoveredCode, setHoveredCode] = useState<string | null>(null);
   const [isLocating, setIsLocating] = useState(false);
+
+  const dayLabel = selectedDay === 'tomorrow' ? '내일 예보' : selectedDay === 'dayAfterTomorrow' ? '모레 예보' : '오늘 예보';
 
   // 기상청 실시간 위험 단계별 조각 채색 (웜 미니멀리즘 팔레트)
   const getRiskFillColor = (code: string) => {
@@ -130,6 +134,9 @@ export default function KoreaMap({
 
       {/* 🎨 위험도 단계 플로팅 인디케이터 (우측 하단 바다 위에 컴팩트하게 세로 부유) */}
       <div className="absolute bottom-3 right-3 z-20 flex flex-col gap-1 sm:gap-1.5 px-2.5 py-2 bg-white/90 backdrop-blur-md border border-[#E0D9CD] rounded-xl shadow-xs text-[10px] sm:text-[11px] text-[#544E47] font-bold">
+        <span className="text-[10px] text-[#5F7556] font-extrabold pb-1 border-b border-[#EAE5DC] block text-center">
+          {dayLabel}
+        </span>
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-xs bg-[#EDE8DF] border border-[#DDD7CD] shrink-0" />
           <span>0 낮음</span>

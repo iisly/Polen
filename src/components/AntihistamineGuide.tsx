@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Pill, AlertCircle, ShieldAlert, HeartPulse } from 'lucide-react';
 
 export default function AntihistamineGuide() {
-  const [selected, setSelected] = useState<'cetirizine' | 'fexofenadine' | 'loratadine'>('cetirizine');
+  const [selected, setSelected] = useState<'cetirizine' | 'loratadine' | 'fexofenadine'>('cetirizine');
 
   const meds = {
     cetirizine: {
@@ -26,25 +26,6 @@ export default function AntihistamineGuide() {
       ],
       tip: '약간의 졸림이 동반될 수 있어 저녁 식후나 취침 30분 전에 복용하면 수면 중 코막힘을 예방하고 다음 날 아침이 상쾌합니다.',
     },
-    fexofenadine: {
-      name: '펙소페나딘',
-      brand: '알레그라 · 펙소나딘 등',
-      tag: '낮 시간 집중 · 졸음 걱정 제로',
-      badge: '수험생 · 직장인 1순위',
-      onset: '복용 후 1시간 내 효과 발현',
-      drowsiness: '매우 적음 (가짜약/위약 수준으로 졸음 없음)',
-      duration: '약 12~24시간 지속 (120mg/180mg)',
-      sideEffects: [
-        '경미한 두통 또는 어지러움',
-        '소화불량, 메스꺼움 등 가벼운 위장관 불편감',
-        '졸음 부작용은 현존 항히스타민제 중 가장 낮음',
-      ],
-      cautions: [
-        '과일주스(자몽·오렌지·사과)와 함께 복용 시 장내 흡수율이 50% 이상 급감하므로 반드시 미온수(맹물)와 복용',
-        '제산제(알루미늄·마그네슘 함유) 복용 시 약 2시간 이상 간격 유지',
-      ],
-      tip: '뇌혈관장벽(BBB)을 거의 통과하지 않아 운전, 중요한 시험, 외근 시 안심하고 복용할 수 있는 대표 낮 복용 약제입니다.',
-    },
     loratadine: {
       name: '로라타딘',
       brand: '클라리틴 · 플로라딘 등',
@@ -63,6 +44,25 @@ export default function AntihistamineGuide() {
         '알레르기 피부 반응 검사 전에는 최소 48시간 전 복용 중단 필요',
       ],
       tip: '작용이 부드럽고 몸에 부담이 적어 만성 비염 환자나 알레르기 약을 처음 드시는 분들에게 선호도가 높습니다.',
+    },
+    fexofenadine: {
+      name: '펙소페나딘',
+      brand: '알레그라 · 펙소나딘 등',
+      tag: '낮 시간 집중 · 졸음 걱정 제로',
+      badge: '수험생 · 직장인 1순위',
+      onset: '복용 후 1시간 내 효과 발현',
+      drowsiness: '매우 적음 (가짜약/위약 수준으로 졸음 없음)',
+      duration: '약 12~24시간 지속 (120mg/180mg)',
+      sideEffects: [
+        '경미한 두통 또는 어지러움',
+        '소화불량, 메스꺼움 등 가벼운 위장관 불편감',
+        '졸음 부작용은 현존 항히스타민제 중 가장 낮음',
+      ],
+      cautions: [
+        '과일주스(자몽·오렌지·사과)와 함께 복용 시 장내 흡수율이 50% 이상 급감하므로 반드시 미온수(맹물)와 복용',
+        '제산제(알루미늄·마그네슘 함유) 복용 시 약 2시간 이상 간격 유지',
+      ],
+      tip: '뇌혈관장벽(BBB)을 거의 통과하지 않아 운전, 중요한 시험, 외근 시 안심하고 복용할 수 있는 대표 낮 복용 약제입니다.',
     },
   };
 

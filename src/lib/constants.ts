@@ -4,7 +4,7 @@ export const REGIONS: Region[] = [
   { code: '1100000000', name: '서울특별시', shortName: '서울', lat: 37.5665, lng: 126.9780 },
   { code: '4100000000', name: '경기도', shortName: '경기', lat: 37.2636, lng: 127.0286 },
   { code: '2800000000', name: '인천광역시', shortName: '인천', lat: 37.4563, lng: 126.7052 },
-  { code: '4200000000', name: '강원특별자치도', shortName: '강원', lat: 37.8854, lng: 127.7298 },
+  { code: '5100000000', name: '강원특별자치도', shortName: '강원', lat: 37.8854, lng: 127.7298 },
   { code: '3000000000', name: '대전광역시', shortName: '대전', lat: 36.3504, lng: 127.3845 },
   { code: '3611000000', name: '세종특별자치시', shortName: '세종', lat: 36.4800, lng: 127.2890 },
   { code: '4300000000', name: '충청북도', shortName: '충북', lat: 36.6424, lng: 127.4890 },
@@ -15,7 +15,7 @@ export const REGIONS: Region[] = [
   { code: '4700000000', name: '경상북도', shortName: '경북', lat: 36.0190, lng: 129.3435 },
   { code: '4800000000', name: '경상남도', shortName: '경남', lat: 35.2280, lng: 128.6811 },
   { code: '2900000000', name: '광주광역시', shortName: '광주', lat: 35.1595, lng: 126.8526 },
-  { code: '4500000000', name: '전북특별자치도', shortName: '전북', lat: 35.8242, lng: 127.1480 },
+  { code: '5200000000', name: '전북특별자치도', shortName: '전북', lat: 35.8242, lng: 127.1480 },
   { code: '4600000000', name: '전라남도', shortName: '전남', lat: 34.8118, lng: 126.3922 },
   { code: '5000000000', name: '제주특별자치도', shortName: '제주', lat: 33.4996, lng: 126.5312 },
 ];

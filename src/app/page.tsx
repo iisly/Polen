@@ -13,6 +13,7 @@ import { AlertCircle } from 'lucide-react';
 
 export default function Home() {
   const [selectedRegion, setSelectedRegion] = useState<Region>(REGIONS[0]);
+  const [selectedDay, setSelectedDay] = useState<'today' | 'tomorrow' | 'dayAfterTomorrow'>('today');
   const [pollenData, setPollenData] = useState<PollenApiResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [userApiKey, setUserApiKey] = useState<string>('');
@@ -91,10 +92,12 @@ export default function Home() {
             <KoreaMap
               selectedRegion={selectedRegion}
               onSelectRegion={(reg) => setSelectedRegion(reg)}
-              regionalRisks={{
-                ...(pollenData?.regionalRisks || {}),
-                ...(pollenData ? { [selectedRegion.code]: pollenData.maxTodayRisk } : {}),
-              }}
+              selectedDay={selectedDay}
+              regionalRisks={
+                pollenData?.regionalDailyRisks
+                  ? pollenData.regionalDailyRisks[selectedDay]
+                  : pollenData?.regionalRisks || {}
+              }
             />
           </div>
 
@@ -106,6 +109,8 @@ export default function Home() {
                 items={pollenData.items}
                 region={pollenData.region}
                 forecastDate={pollenData.forecastDate}
+                selectedDay={selectedDay}
+                onSelectDay={setSelectedDay}
               />
             )}
           </div>

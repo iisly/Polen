@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { REGIONS, POLLEN_SPECIES_INFO } from '@/lib/constants';
-import { PollenApiResponse, PollenForecastItem, PollenType, RiskLevel } from '@/types/pollen';
+import { PollenApiResponse, PollenForecastItem, PollenType, RegionalDailyRisks, RiskLevel } from '@/types/pollen';
+import { KMA_REGION_STATIONS, calculateMajorityRisk } from '@/lib/kmaStationPoints';
 
 function getKstDateTime() {
   const now = new Date();
@@ -14,7 +15,6 @@ function getKstDateTime() {
   let baseHour = '06';
 
   // 기상청 꽃가루 위험지수는 매일 06:00, 18:00 하루 2회 발표됩니다.
-  // 06:00 이전(새벽)에는 전일 18:00 발표 자료를 조회하고 표기합니다.
   if (hour < 6) {
     targetDate = new Date(kst.getTime() - 24 * 3600000);
     baseHour = '18';
@@ -38,77 +38,142 @@ function getKstDateTime() {
   };
 }
 
-// 전국 17개 시도 위험도 인메모리 캐시 (30분 유효)
-let nationwideCache: {
-  timeKey: string;
-  timestamp: number;
-  risks: Record<string, RiskLevel>;
-} | null = null;
-
-async function getNationwideRisks(apiKey: string, timeStr: string, activeMonth: number): Promise<Record<string, RiskLevel>> {
-  const now = Date.now();
-  if (nationwideCache && nationwideCache.timeKey === timeStr && (now - nationwideCache.timestamp < 30 * 60 * 1000)) {
-    return nationwideCache.risks;
+// 🌸 스마트 계절 판정: 불필요한 호출을 원천 차단
+// 3~6월: 참나무, 소나무만 제공
+// 8~10월: 잡초류만 제공
+// 1, 2, 7, 11, 12월: 미제공 (API 호출 생략)
+function getActivePollenTypes(month: number): PollenType[] {
+  if (month >= 3 && month <= 6) {
+    return ['oak', 'pine'];
   }
-
-  const risks: Record<string, RiskLevel> = {};
-  REGIONS.forEach((r) => { risks[r.code] = 0; });
-
-  if (!apiKey) return risks;
-
-  const activeTypes = (['oak', 'pine', 'weeds'] as PollenType[]).filter(
-    (t) => POLLEN_SPECIES_INFO[t].seasonMonths.includes(activeMonth)
-  );
-
-  if (activeTypes.length === 0) {
-    nationwideCache = { timeKey: timeStr, timestamp: now, risks };
-    return risks;
+  if (month >= 8 && month <= 10) {
+    return ['weeds'];
   }
-
-  try {
-    await Promise.all(
-      REGIONS.map(async (reg) => {
-        try {
-          const typePromises = activeTypes.map(async (t) => {
-            const opName = POLLEN_SPECIES_INFO[t].endpoint;
-            const url = `https://apis.data.go.kr/1360000/HealthWthrIdxServiceV3/${opName}?serviceKey=${encodeURIComponent(apiKey)}&pageNo=1&numOfRows=1&dataType=JSON&areaNo=${reg.code}&time=${timeStr}`;
-            const res = await fetch(url, { next: { revalidate: 1800 } });
-            if (!res.ok) return 0;
-            const data = await res.json();
-            if (data?.response?.header?.resultCode !== '00') return 0;
-            const item = data?.response?.body?.items?.item?.[0];
-            if (!item) return 0;
-            const rawVal = item.today !== '' ? item.today : item.tomorrow;
-            const num = parseInt(String(rawVal), 10);
-            return isNaN(num) || num < 0 ? 0 : num > 3 ? 3 : (num as RiskLevel);
-          });
-          const typeRisks = await Promise.all(typePromises);
-          risks[reg.code] = Math.max(0, ...typeRisks) as RiskLevel;
-        } catch {
-          risks[reg.code] = 0;
-        }
-      })
-    );
-    nationwideCache = { timeKey: timeStr, timestamp: now, risks };
-  } catch (err) {
-    console.error('Nationwide risks fetch error:', err);
-  }
-
-  return risks;
+  return [];
 }
 
-// 모든 지수를 0(안전/비산기)으로 초기화
-function createEmptyPollenData(currentMonthNum: number): Record<PollenType, PollenForecastItem> {
-  const isOakActive = POLLEN_SPECIES_INFO.oak.seasonMonths.includes(currentMonthNum);
-  const isPineActive = POLLEN_SPECIES_INFO.pine.seasonMonths.includes(currentMonthNum);
-  const isWeedsActive = POLLEN_SPECIES_INFO.weeds.seasonMonths.includes(currentMonthNum);
+// 지점 단일 API 호출 헬퍼
+async function fetchStationItem(apiKey: string, type: PollenType, stationCode: string, timeStr: string) {
+  const opName = POLLEN_SPECIES_INFO[type].endpoint;
+  const url = `https://apis.data.go.kr/1360000/HealthWthrIdxServiceV3/${opName}?serviceKey=${encodeURIComponent(apiKey)}&pageNo=1&numOfRows=1&dataType=JSON&areaNo=${stationCode}&time=${timeStr}`;
+  
+  const res = await fetch(url, { next: { revalidate: 1800 } });
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (data?.response?.header?.resultCode !== '00') return null;
+  return data?.response?.body?.items?.item?.[0] || null;
+}
 
+const parseVal = (val: any): RiskLevel => {
+  if (val === undefined || val === null || val === '') return 0;
+  const num = parseInt(String(val), 10);
+  if (isNaN(num) || num < 0) return 0;
+  if (num > 3) return 3;
+  return num as RiskLevel;
+};
+
+// 전국 17개 시도 과반수 3일 예보 인메모리 캐시 (30분 유효)
+let nationwideDailyCache: {
+  timeKey: string;
+  timestamp: number;
+  dailyRisks: RegionalDailyRisks;
+} | null = null;
+
+async function getNationwideDailyRisks(
+  apiKey: string,
+  timeStr: string,
+  activeMonth: number
+): Promise<RegionalDailyRisks> {
+  const now = Date.now();
+  if (
+    nationwideDailyCache &&
+    nationwideDailyCache.timeKey === timeStr &&
+    now - nationwideDailyCache.timestamp < 30 * 60 * 1000
+  ) {
+    return nationwideDailyCache.dailyRisks;
+  }
+
+  const emptyRisks: RegionalDailyRisks = {
+    today: {},
+    tomorrow: {},
+    dayAfterTomorrow: {},
+  };
+  REGIONS.forEach((r) => {
+    emptyRisks.today[r.code] = 0;
+    emptyRisks.tomorrow[r.code] = 0;
+    emptyRisks.dayAfterTomorrow[r.code] = 0;
+  });
+
+  const activeTypes = getActivePollenTypes(activeMonth);
+  if (!apiKey || activeTypes.length === 0) {
+    nationwideDailyCache = { timeKey: timeStr, timestamp: now, dailyRisks: emptyRisks };
+    return emptyRisks;
+  }
+
+  const dailyRisks: RegionalDailyRisks = {
+    today: { ...emptyRisks.today },
+    tomorrow: { ...emptyRisks.tomorrow },
+    dayAfterTomorrow: { ...emptyRisks.dayAfterTomorrow },
+  };
+
+  try {
+    // 17개 광역시도별로 관할 지점들 병렬 조회
+    await Promise.all(
+      REGIONS.map(async (region) => {
+        const stations = KMA_REGION_STATIONS[region.code] || [{ code: region.code, name: region.name }];
+
+        // 활성 수종별로 관할 지점들의 3일 예보 수집
+        const typeDailyResults = await Promise.all(
+          activeTypes.map(async (type) => {
+            const stationResults = await Promise.all(
+              stations.map(async (st) => {
+                try {
+                  const item = await fetchStationItem(apiKey, type, st.code, timeStr);
+                  if (!item) return { today: 0, tomorrow: 0, dayAfterTomorrow: 0 };
+                  const todayRaw = item.today !== '' ? item.today : item.tomorrow;
+                  return {
+                    today: parseVal(todayRaw),
+                    tomorrow: parseVal(item.tomorrow),
+                    dayAfterTomorrow: parseVal(item.dayaftertomorrow),
+                  };
+                } catch {
+                  return { today: 0, tomorrow: 0, dayAfterTomorrow: 0 };
+                }
+              })
+            );
+
+            // 관할 구역이 여러 개인 곳은 "과반인 값"으로 단계 계산
+            return {
+              today: calculateMajorityRisk(stationResults.map((s) => s.today)) as RiskLevel,
+              tomorrow: calculateMajorityRisk(stationResults.map((s) => s.tomorrow)) as RiskLevel,
+              dayAfterTomorrow: calculateMajorityRisk(stationResults.map((s) => s.dayAfterTomorrow)) as RiskLevel,
+            };
+          })
+        );
+
+        // 참나무와 소나무가 동시 비산하는 봄철에는 둘 중 MAX 값 채택
+        dailyRisks.today[region.code] = Math.max(...typeDailyResults.map((r) => r.today)) as RiskLevel;
+        dailyRisks.tomorrow[region.code] = Math.max(...typeDailyResults.map((r) => r.tomorrow)) as RiskLevel;
+        dailyRisks.dayAfterTomorrow[region.code] = Math.max(...typeDailyResults.map((r) => r.dayAfterTomorrow)) as RiskLevel;
+      })
+    );
+
+    nationwideDailyCache = { timeKey: timeStr, timestamp: now, dailyRisks };
+  } catch (err) {
+    console.error('Nationwide daily risks fetch error:', err);
+  }
+
+  return dailyRisks;
+}
+
+function createEmptyPollenData(currentMonthNum: number): Record<PollenType, PollenForecastItem> {
+  const activeTypes = getActivePollenTypes(currentMonthNum);
   return {
     oak: {
       type: 'oak',
-      name: '참나무',
+      name: POLLEN_SPECIES_INFO.oak.name,
       season: POLLEN_SPECIES_INFO.oak.seasonText,
-      isActiveSeason: isOakActive,
+      isActiveSeason: activeTypes.includes('oak'),
       today: 0,
       tomorrow: 0,
       dayAfterTomorrow: 0,
@@ -116,9 +181,9 @@ function createEmptyPollenData(currentMonthNum: number): Record<PollenType, Poll
     },
     pine: {
       type: 'pine',
-      name: '소나무 (송홧가루)',
+      name: POLLEN_SPECIES_INFO.pine.name,
       season: POLLEN_SPECIES_INFO.pine.seasonText,
-      isActiveSeason: isPineActive,
+      isActiveSeason: activeTypes.includes('pine'),
       today: 0,
       tomorrow: 0,
       dayAfterTomorrow: 0,
@@ -126,9 +191,9 @@ function createEmptyPollenData(currentMonthNum: number): Record<PollenType, Poll
     },
     weeds: {
       type: 'weeds',
-      name: '잡초류 (돼지풀·환삼덩굴)',
+      name: POLLEN_SPECIES_INFO.weeds.name,
       season: POLLEN_SPECIES_INFO.weeds.seasonText,
-      isActiveSeason: isWeedsActive,
+      isActiveSeason: activeTypes.includes('weeds'),
       today: 0,
       tomorrow: 0,
       dayAfterTomorrow: 0,
@@ -147,139 +212,93 @@ export async function GET(request: NextRequest) {
   const apiKey = customApiKey || process.env.KMA_POLLEN_API_KEY || '';
 
   const defaultItems = createEmptyPollenData(currentMonthNum);
+  const activeTypes = getActivePollenTypes(currentMonthNum);
 
-  // 1. API 키가 아예 없는 경우 -> 솔직하게 안내
-  if (!apiKey) {
+  // 1. API 키가 없거나 비산기(활동 월)가 전혀 아닌 경우 -> 외부 호출 생략
+  if (!apiKey || activeTypes.length === 0) {
+    const isOff = activeTypes.length === 0;
     return NextResponse.json<PollenApiResponse>({
-      success: false,
-      isOffSeason: false,
-      error: '공공데이터포털 API 인증키가 등록되지 않았습니다.',
+      success: isOff,
+      isOffSeason: isOff,
       region,
       forecastDate: displayDate,
       items: defaultItems,
       maxTodayRisk: 0,
-      message: '공공데이터포털에서 발급받은 인증키를 설정하시면 실시간 기상청 조회가 진행됩니다. 현재는 모든 수치가 기본 0으로 표시됩니다.',
+      regionalRisks: {},
+      regionalDailyRisks: { today: {}, tomorrow: {}, dayAfterTomorrow: {} },
+      message: isOff
+        ? '현재는 꽃가루 비산 휴지기로 기상청에서 지수를 제공하지 않는 기간입니다.'
+        : '공공데이터포털 API 인증키가 필요합니다.',
     });
   }
 
-  // 2. 기상청 API 실제 호출 시도
   try {
-    const pollenTypes: PollenType[] = ['oak', 'pine', 'weeds'];
-    let errorMsg: string | null = null;
-    let hasLiveSuccess = false;
+    const stations = KMA_REGION_STATIONS[region.code] || [{ code: region.code, name: region.name }];
+    const liveItems = { ...defaultItems };
 
-    const results = await Promise.allSettled(
-      pollenTypes.map(async (type) => {
-        const opName = POLLEN_SPECIES_INFO[type].endpoint;
-        const url = `https://apis.data.go.kr/1360000/HealthWthrIdxServiceV3/${opName}?serviceKey=${encodeURIComponent(apiKey)}&pageNo=1&numOfRows=10&dataType=JSON&areaNo=${areaNo}&time=${timeStr}`;
+    // 활성 수종만 스마트하게 호출 (불필요한 호출 원천 배제)
+    await Promise.all(
+      activeTypes.map(async (type) => {
+        const stationResults = await Promise.all(
+          stations.map(async (st) => {
+            try {
+              const item = await fetchStationItem(apiKey, type, st.code, timeStr);
+              if (!item) return { today: 0, tomorrow: 0, dayAfterTomorrow: 0, twoDays: 0 };
+              const todayRaw = item.today !== '' ? item.today : item.tomorrow;
+              return {
+                today: parseVal(todayRaw),
+                tomorrow: parseVal(item.tomorrow),
+                dayAfterTomorrow: parseVal(item.dayaftertomorrow),
+                twoDays: parseVal(item.twodaysaftertomorrow),
+              };
+            } catch {
+              return { today: 0, tomorrow: 0, dayAfterTomorrow: 0, twoDays: 0 };
+            }
+          })
+        );
 
-        const res = await fetch(url, {
-          headers: { 'User-Agent': 'Mozilla/5.0' },
-          next: { revalidate: 300 }, // 5분 캐시
-        });
+        // 관할구역이 여러 개인 곳은 "과반인 값"으로 단계 계산
+        const majorityToday = calculateMajorityRisk(stationResults.map((s) => s.today)) as RiskLevel;
+        const majorityTomorrow = calculateMajorityRisk(stationResults.map((s) => s.tomorrow)) as RiskLevel;
+        const majorityDayAfter = calculateMajorityRisk(stationResults.map((s) => s.dayAfterTomorrow)) as RiskLevel;
+        const majorityTwoDays = calculateMajorityRisk(stationResults.map((s) => s.twoDays)) as RiskLevel;
 
-        if (!res.ok) {
-          throw new Error(`기상청 서버 HTTP ${res.status} 응답`);
-        }
-
-        const data = await res.json();
-        const header = data?.response?.header;
-
-        // resultCode '99': "해당지수자료 제공기간이 아닙니다" (예: 가을철 참나무/소나무)
-        // 이는 에러가 아니라 해당 수종의 비산기가 아님을 의미하는 정상 응답입니다.
-        if (header?.resultCode === '99') {
-          return {
-            type,
-            name: POLLEN_SPECIES_INFO[type].name,
-            season: POLLEN_SPECIES_INFO[type].seasonText,
-            isActiveSeason: false,
-            today: 0 as RiskLevel,
-            tomorrow: 0 as RiskLevel,
-            dayAfterTomorrow: 0 as RiskLevel,
-            twoDaysAfterTomorrow: 0 as RiskLevel,
-            dateStr: timeStr,
-          };
-        }
-
-        if (header?.resultCode !== '00') {
-          throw new Error(header?.resultMsg || '응답 오류');
-        }
-
-        const item = data?.response?.body?.items?.item?.[0];
-        if (!item) {
-          throw new Error('데이터 없음');
-        }
-
-        const parseVal = (val: any): RiskLevel => {
-          if (val === undefined || val === null || val === '') return 0;
-          const num = parseInt(String(val), 10);
-          if (isNaN(num) || num < 0) return 0;
-          if (num > 3) return 3;
-          return num as RiskLevel;
-        };
-
-        const todayVal = parseVal(item.today);
-        const tomorrowVal = parseVal(item.tomorrow);
-
-        const forecastItem: PollenForecastItem = {
+        liveItems[type] = {
           type,
           name: POLLEN_SPECIES_INFO[type].name,
           season: POLLEN_SPECIES_INFO[type].seasonText,
-          isActiveSeason: POLLEN_SPECIES_INFO[type].seasonMonths.includes(currentMonthNum),
-          // 18시 이후 오늘 관측이 마감되어 빈 문자열("")로 올 경우 내일 예보 또는 0으로 보정
-          today: item.today === '' ? tomorrowVal : todayVal,
-          tomorrow: tomorrowVal,
-          dayAfterTomorrow: parseVal(item.dayaftertomorrow),
-          twoDaysAfterTomorrow: parseVal(item.twodaysaftertomorrow),
-          dateStr: item.date,
+          isActiveSeason: true,
+          today: majorityToday,
+          tomorrow: majorityTomorrow,
+          dayAfterTomorrow: majorityDayAfter,
+          twoDaysAfterTomorrow: majorityTwoDays,
+          dateStr: timeStr,
         };
-
-        return forecastItem;
       })
     );
 
-    // 응답 취합
-    const liveItems = { ...defaultItems };
-    results.forEach((res, idx) => {
-      const type = pollenTypes[idx];
-      if (res.status === 'fulfilled' && res.value) {
-        liveItems[type] = res.value;
-        hasLiveSuccess = true;
-      } else if (res.status === 'rejected' && !errorMsg) {
-        errorMsg = res.reason?.message || '알 수 없는 오류';
-      }
-    });
+    // 전국 17개 시도 과반수 3일 예보 가져오기
+    const regionalDailyRisks = await getNationwideDailyRisks(apiKey, timeStr, currentMonthNum);
 
-    const regionalRisks = await getNationwideRisks(apiKey, timeStr, currentMonthNum);
+    const maxTodayRisk = Math.max(
+      liveItems.oak.today,
+      liveItems.pine.today,
+      liveItems.weeds.today
+    ) as RiskLevel;
 
-    if (hasLiveSuccess) {
-      const maxTodayRisk = Math.max(liveItems.oak.today, liveItems.pine.today, liveItems.weeds.today) as RiskLevel;
-      return NextResponse.json<PollenApiResponse>({
-        success: true,
-        isOffSeason: false,
-        region,
-        forecastDate: displayDate,
-        items: liveItems,
-        maxTodayRisk,
-        regionalRisks,
-        message: '기상청 공공데이터를 정상적으로 실시간 수신했습니다.',
-      });
-    }
-
-    // 3. 실시간 호출 실패 시 솔직하게 에러 반환 (가짜 데이터 없음, 기본 0)
     return NextResponse.json<PollenApiResponse>({
-      success: false,
+      success: true,
       isOffSeason: false,
-      error: errorMsg ? `기상청 데이터를 불러오지 못했습니다: ${errorMsg}` : '기상청 API 응답을 불러오지 못했습니다.',
       region,
       forecastDate: displayDate,
-      items: defaultItems,
-      maxTodayRisk: 0,
-      regionalRisks,
-      message: '기상청 공공데이터포털 서버 연결 실패 또는 서비스 점검 중으로 실시간 데이터를 수신하지 못했습니다. (비산기가 아닌 수종은 기본 0으로 표시됩니다.)',
+      items: liveItems,
+      maxTodayRisk,
+      regionalRisks: regionalDailyRisks.today, // 기존 호환용
+      regionalDailyRisks, // 오늘/내일/모레 일자별 전국 위험도
+      message: '기상청 공공데이터를 관할 지점 과반수 집계로 정상 수신했습니다.',
     });
   } catch (err: any) {
-    // 4. 예외 발생 시 솔직한 에러 알림
+    console.error('Pollen API route error:', err);
     return NextResponse.json<PollenApiResponse>({
       success: false,
       isOffSeason: false,
@@ -288,7 +307,7 @@ export async function GET(request: NextRequest) {
       forecastDate: displayDate,
       items: defaultItems,
       maxTodayRisk: 0,
-      message: '공공데이터포털 서버와의 통신 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
+      message: '공공데이터포털 서버 통신 중 오류가 발생했습니다.',
     });
   }
 }

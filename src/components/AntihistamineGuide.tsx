@@ -106,11 +106,6 @@ export default function AntihistamineGuide() {
                   {item.brand.split(' ')[0]}
                 </span>
               </div>
-              <span className={`text-[10px] sm:text-[11px] font-bold mt-2 px-1.5 py-0.5 rounded self-start whitespace-nowrap ${
-                isSelected ? 'bg-[#5F7556] text-white' : 'bg-[#F2ECE1] text-[#544E47]'
-              }`}>
-                {item.badge.split(' ')[0]}
-              </span>
             </button>
           );
         })}

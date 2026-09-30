@@ -128,22 +128,22 @@ export default function KoreaMap({
         <span>{isLocating ? '위치 탐색 중' : '내 위치'}</span>
       </button>
 
-      {/* 🎨 위험도 단계 플로팅 인디케이터 (좌측 하단 서해 바다 위에 컴팩트하게 부유하여 지도 공간 100% 확보) */}
-      <div className="absolute bottom-3 left-3 z-20 flex items-center gap-2 sm:gap-2.5 px-2.5 py-1.5 bg-white/90 backdrop-blur-md border border-[#E0D9CD] rounded-xl shadow-xs text-[10px] sm:text-[11px] text-[#544E47] font-bold">
-        <div className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-xs bg-[#EDE8DF] border border-[#DDD7CD]" />
+      {/* 🎨 위험도 단계 플로팅 인디케이터 (우측 하단 바다 위에 컴팩트하게 세로 부유) */}
+      <div className="absolute bottom-3 right-3 z-20 flex flex-col gap-1 sm:gap-1.5 px-2.5 py-2 bg-white/90 backdrop-blur-md border border-[#E0D9CD] rounded-xl shadow-xs text-[10px] sm:text-[11px] text-[#544E47] font-bold">
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-xs bg-[#EDE8DF] border border-[#DDD7CD] shrink-0" />
           <span>0 낮음</span>
         </div>
-        <div className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-xs bg-[#E5D3A6] border border-[#D5C293]" />
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-xs bg-[#E5D3A6] border border-[#D5C293] shrink-0" />
           <span>1 보통</span>
         </div>
-        <div className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-xs bg-[#DF9F86] border border-[#CF8E75]" />
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-xs bg-[#DF9F86] border border-[#CF8E75] shrink-0" />
           <span>2 높음</span>
         </div>
-        <div className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-xs bg-[#C86350] border border-[#B75340]" />
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-xs bg-[#C86350] border border-[#B75340] shrink-0" />
           <span>3 매우높음</span>
         </div>
       </div>

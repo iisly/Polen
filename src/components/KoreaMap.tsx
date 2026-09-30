@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { REGIONS } from '@/lib/constants';
 import { Region, RiskLevel } from '@/types/pollen';
 import { KOREA_PROVINCE_PATHS } from '@/lib/koreaProvincePaths';
+import { Navigation } from 'lucide-react';
 
 interface KoreaMapProps {
   selectedRegion: Region;
@@ -17,6 +18,7 @@ export default function KoreaMap({
   regionalRisks = {},
 }: KoreaMapProps) {
   const [hoveredCode, setHoveredCode] = useState<string | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
 
   // 기상청 실시간 위험 단계별 조각 채색 (웜 미니멀리즘 팔레트)
   const getRiskFillColor = (code: string) => {
@@ -35,7 +37,41 @@ export default function KoreaMap({
     }
   };
 
-  // 선택된 지역이 맨 위에 렌더링되도록 정렬 (테두리 하이라이트 보호)
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      alert('위치 서비스를 지원하지 않는 브라우저입니다.');
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const userLat = pos.coords.latitude;
+        const userLng = pos.coords.longitude;
+
+        let closest = REGIONS[0];
+        let minD = Infinity;
+
+        REGIONS.forEach((r) => {
+          const d = Math.hypot(r.lat - userLat, r.lng - userLng);
+          if (d < minD) {
+            minD = d;
+            closest = r;
+          }
+        });
+
+        onSelectRegion(closest);
+        setIsLocating(false);
+      },
+      () => {
+        setIsLocating(false);
+        alert('위치 정보를 가져올 수 없습니다.');
+      },
+      { timeout: 5000 }
+    );
+  };
+
+  // 선택된 지역이 맨 위에 렌더링되도록 정렬 (외곽선 하이라이트 보호)
   const sortedProvinces = [...KOREA_PROVINCE_PATHS].sort((a, b) => {
     if (a.code === selectedRegion.code) return 1;
     if (b.code === selectedRegion.code) return -1;
@@ -43,8 +79,19 @@ export default function KoreaMap({
   });
 
   return (
-    <div className="bg-white border border-[#ECE7DE] rounded-2xl p-3 sm:p-5 flex flex-col justify-between h-full shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-2">
-      {/* 넉넉하고 시원한 정밀 지리 좌표 기반 대한민국 17개 광역시도 지도 */}
+    <div className="bg-white border border-[#ECE7DE] rounded-2xl p-3 sm:p-5 flex flex-col justify-between h-full shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-2 relative">
+      {/* 🧭 내 위치 플로팅 버튼 (상단 공간을 차지하지 않고 지도 우측 상단 바다 위에 컴팩트하게 부유) */}
+      <button
+        onClick={handleDetectLocation}
+        disabled={isLocating}
+        className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-md border border-[#E0D9CD] hover:bg-white hover:border-[#BCB3A4] active:scale-95 rounded-xl text-[#3A3530] shadow-xs transition text-xs font-bold"
+        title="GPS로 내 위치 찾기"
+      >
+        <Navigation className={`w-3.5 h-3.5 text-[#5F7556] ${isLocating ? 'animate-spin' : ''}`} />
+        <span>{isLocating ? '위치 탐색 중' : '내 위치'}</span>
+      </button>
+
+      {/* 이퀄 어스(Equal Earth) 정적 도법 기반 대한민국 17개 광역시도 지도 */}
       <div className="w-full max-w-[320px] aspect-[3/4] relative mx-auto my-auto flex items-center justify-center py-1">
         <svg
           viewBox="0 0 300 380"
@@ -52,11 +99,11 @@ export default function KoreaMap({
         >
           {/* 동해 울릉도 & 독도 */}
           <g className="cursor-default opacity-85">
-            <circle cx="278" cy="112" r="3.2" fill="#D5CFC5" stroke="#C2BAB0" strokeWidth="0.8" />
-            <circle cx="293" cy="117" r="1.8" fill="#D5CFC5" stroke="#C2BAB0" strokeWidth="0.8" />
+            <circle cx="278" cy="114" r="3.2" fill="#D5CFC5" stroke="#C2BAB0" strokeWidth="0.8" />
+            <circle cx="293" cy="119" r="1.8" fill="#D5CFC5" stroke="#C2BAB0" strokeWidth="0.8" />
           </g>
 
-          {/* 17개 광역시도 정밀 폴리곤 영역 */}
+          {/* 17개 광역시도 정밀 폴리곤 영역 (이퀄 어스 투영) */}
           {sortedProvinces.map((prov) => {
             const isSelected = selectedRegion.code === prov.code;
             const isHovered = hoveredCode === prov.code;
@@ -88,7 +135,7 @@ export default function KoreaMap({
                   }}
                 />
 
-                {/* 지명 텍스트 라벨 (진짜 정중앙 정렬 + 흰색 외곽선 헤일로) */}
+                {/* 지명 텍스트 라벨 (정확한 중심 정렬 + 흰색 외곽선 헤일로) */}
                 <text
                   x={prov.cx}
                   y={prov.cy}

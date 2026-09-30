@@ -14,6 +14,50 @@ interface PollenSummaryCardProps {
 
 export type ForecastDay = 'today' | 'tomorrow' | 'dayAfterTomorrow';
 
+const RESPONSE_GUIDELINES = [
+  {
+    level: 3,
+    step: '매우높음',
+    range: '3단계',
+    badgeClass: 'bg-[#FBE8E5] text-[#9E3622] border-[#F2C5BD]',
+    tips: [
+      '거의 모든 꽃가루 알레르기 환자에게서 증상이 나타날 수 있으므로 가급적 외출을 자제하고 실내에 머물러야 함',
+      '부득이하게 외출을 할 경우에는 선글라스, 마스크 등을 반드시 착용',
+      '창문을 닫아 꽃가루의 실내 유입을 막음',
+      '알레르기 환자의 경우 증상이 심해지면 전문의를 방문함',
+    ],
+  },
+  {
+    level: 2,
+    step: '높음',
+    range: '2단계',
+    badgeClass: 'bg-[#FDF0EC] text-[#B85438] border-[#F7D2C4]',
+    tips: [
+      '대개의 꽃가루 알레르기 환자에게서 증상이 나타날 수 있으므로 가급적 야외 활동을 자제함',
+      '외출 시에는 선글라스, 마스크 등을 착용',
+      '외출 후 손과 얼굴을 씻고, 취침 전 샤워를 하여 침구류에 꽃가루가 묻지 않게 하기',
+    ],
+  },
+  {
+    level: 1,
+    step: '보통',
+    range: '1단계',
+    badgeClass: 'bg-[#FAF4E5] text-[#8C6D23] border-[#EFE0B8]',
+    tips: [
+      '꽃가루 알레르기가 약한 환자에게서 증상이 나타날 수 있으므로, 알레르기 환자는 야외 활동 시 선글라스, 마스크 등을 착용하도록 주의함',
+    ],
+  },
+  {
+    level: 0,
+    step: '낮음',
+    range: '0단계',
+    badgeClass: 'bg-[#EFF5EC] text-[#406838] border-[#CCE2C4]',
+    tips: [
+      '꽃가루 알레르기가 심한 환자는 증상이 나타날 수 있음',
+    ],
+  },
+];
+
 export default function PollenSummaryCard({
   items,
   region,
@@ -46,33 +90,35 @@ export default function PollenSummaryCard({
 
   const dayRisk = calcMaxRisk(selectedDay);
 
+  const [showGuidelines, setShowGuidelines] = useState(false);
+
   const getRiskInfo = (level: RiskLevel) => {
     switch (level) {
       case 0:
         return {
-          title: '안전',
-          sub: '꽃가루 영향이 거의 없어 외출과 실내 환기에 자유롭습니다.',
+          title: '낮음',
+          sub: '꽃가루 알레르기가 심한 환자는 증상이 나타날 수 있습니다.',
           dotColor: 'bg-[#5F7556]',
           barColor: '#5F7556',
         };
       case 1:
         return {
           title: '보통',
-          sub: '예민한 비염 환자는 외출 시 마스크를 챙기세요.',
+          sub: '꽃가루 알레르기가 약한 환자도 증상이 나타날 수 있으므로 야외 활동 시 마스크, 선글라스를 착용하세요.',
           dotColor: 'bg-[#BFA15F]',
           barColor: '#BFA15F',
         };
       case 2:
         return {
           title: '높음',
-          sub: '꽃가루 비산량이 많습니다. 외출 시 KF 마스크를 착용하세요.',
+          sub: '대개의 환자에게서 증상이 나타날 수 있으므로 가급적 야외 활동을 자제하고 외출 후 샤워를 권장합니다.',
           dotColor: 'bg-[#C28C7E]',
           barColor: '#C28C7E',
         };
       case 3:
         return {
           title: '매우높음',
-          sub: '야외 활동을 자제하고 귀가 후 즉시 코세척을 권장합니다.',
+          sub: '거의 모든 환자에게 증상이 나타날 수 있으므로 외출을 자제하고 창문을 닫으세요. 증상 심화 시 전문의를 방문하세요.',
           dotColor: 'bg-[#A85848]',
           barColor: '#A85848',
         };
@@ -204,13 +250,80 @@ export default function PollenSummaryCard({
                     {risk}
                   </span>
                   <span className="text-[11px] sm:text-xs font-semibold text-[#7A726A] whitespace-nowrap">
-                    {isActive ? '단계' : '(비산기외)'}
+                    {isActive ? '단계' : '(비산기 아님)'}
                   </span>
                 </div>
               </div>
             );
           })}
         </div>
+      </div>
+
+      {/* 기상청 공식 단계별 대응요령 아코디언 / 표 */}
+      <div className="pt-2 border-t border-[#F2ECE1]">
+        <button
+          onClick={() => setShowGuidelines(!showGuidelines)}
+          className="w-full flex items-center justify-between py-2 text-xs sm:text-sm font-semibold text-[#635C54] hover:text-[#1F1D1A] transition-colors"
+        >
+          <span className="flex items-center gap-1.5">
+            📋 <span>기상청 단계별 대응요령 안내</span>
+          </span>
+          <span className="text-xs text-[#8C827A] flex items-center gap-1 font-normal">
+            {showGuidelines ? '접기 ▲' : '자세히 보기 ▼'}
+          </span>
+        </button>
+
+        {showGuidelines && (
+          <div className="mt-2.5 space-y-3 bg-[#FAF8F5] border border-[#ECE7DE] rounded-xl p-3 sm:p-4 text-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-[#E5DFD3] text-[#7A726A] text-[11px] sm:text-xs">
+                    <th className="py-1.5 px-2 font-semibold w-24">단계</th>
+                    <th className="py-1.5 px-2 font-semibold">대응요령</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#EFEAE1]">
+                  {RESPONSE_GUIDELINES.map((item) => {
+                    const isSelected = dayRisk === item.level;
+                    return (
+                      <tr
+                        key={item.step}
+                        className={`transition-colors ${
+                          isSelected ? 'bg-[#F2EDE4]/80 font-medium' : ''
+                        }`}
+                      >
+                        <td className="py-2.5 px-2 align-top whitespace-nowrap">
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold border ${item.badgeClass}`}
+                          >
+                            {item.step}
+                          </span>
+                          <span className="block text-[10px] text-[#8C827A] mt-0.5">
+                            {item.range}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-2 align-top text-[#4A443E] leading-relaxed text-[11px] sm:text-xs">
+                          <ul className="list-disc list-inside space-y-1">
+                            {item.tips.map((tip, idx) => (
+                              <li key={idx} className="leading-snug">
+                                {tip}
+                              </li>
+                            ))}
+                          </ul>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="pt-2 border-t border-[#EAE5DC] text-[10px] sm:text-[11px] text-[#8C827A] leading-relaxed">
+              <p>※ 의학자문: 서울대학병원 운영 서울특별시 보라매 병원 내과 김덕겸, 허응영 서울의대 교수</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

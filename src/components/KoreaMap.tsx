@@ -12,7 +12,7 @@ interface KoreaMapProps {
   regionalRisks?: Record<string, RiskLevel>;
 }
 
-// @svg-maps/south-korea location.id -> 기상청 행정구역코드(10자리) 및 라벨 좌표 (viewBox 0 0 524 631 기준)
+// @svg-maps/south-korea location.id -> 기상청 행정구역코드(10자리) 및 정밀 라벨 좌표 (viewBox 0 0 524 631 기준)
 interface RegionMeta {
   code: string;
   shortName: string;
@@ -23,19 +23,25 @@ interface RegionMeta {
 
 const LOCATION_META: Record<string, RegionMeta> = {
   seoul: { code: '1100000000', shortName: '서울', labelX: 152, labelY: 127, isMetropolis: true },
-  gyeonggi: { code: '4100000000', shortName: '경기', labelX: 180, labelY: 90 },
-  incheon: { code: '2800000000', shortName: '인천', labelX: 108, labelY: 135, isMetropolis: true },
+  gyeonggi: { code: '4100000000', shortName: '경기', labelX: 175, labelY: 88 },
+  incheon: { code: '2800000000', shortName: '인천', labelX: 106, labelY: 135, isMetropolis: true },
   gangwon: { code: '4200000000', shortName: '강원', labelX: 275, labelY: 95 },
-  'north-chungcheong': { code: '4300000000', shortName: '충북', labelX: 243, labelY: 235 },
-  'south-chungcheong': { code: '4400000000', shortName: '충남', labelX: 135, labelY: 250 },
-  sejong: { code: '3611000000', shortName: '세종', labelX: 177, labelY: 245, isMetropolis: true },
-  daejeon: { code: '3000000000', shortName: '대전', labelX: 192, labelY: 274, isMetropolis: true },
-  'north-gyeongsang': { code: '4700000000', shortName: '경북', labelX: 315, labelY: 230 },
+  // 충북: 청주-충주 내륙 본토 정중앙 안착 (기존 243, 235는 경북 문경 이탈 문제 해결)
+  'north-chungcheong': { code: '4300000000', shortName: '충북', labelX: 215, labelY: 205 },
+  // 충남: 서산-홍성-예산 중심
+  'south-chungcheong': { code: '4400000000', shortName: '충남', labelX: 130, labelY: 250 },
+  // 세종: 대전(275)과 충분한 수직 간격(37px) 확보
+  sejong: { code: '3611000000', shortName: '세종', labelX: 172, labelY: 238, isMetropolis: true },
+  // 대전: 세종 남동쪽 대전 분지 중심
+  daejeon: { code: '3000000000', shortName: '대전', labelX: 192, labelY: 275, isMetropolis: true },
+  // 경북: 안동-의성 내륙 중심
+  'north-gyeongsang': { code: '4700000000', shortName: '경북', labelX: 320, labelY: 235 },
   daegu: { code: '2700000000', shortName: '대구', labelX: 300, labelY: 336, isMetropolis: true },
-  ulsan: { code: '3100000000', shortName: '울산', labelX: 364, labelY: 367, isMetropolis: true },
-  busan: { code: '2600000000', shortName: '부산', labelX: 345, labelY: 402, isMetropolis: true },
-  'south-gyeongsang': { code: '4800000000', shortName: '경남', labelX: 280, labelY: 400 },
-  'north-jeolla': { code: '4500000000', shortName: '전북', labelX: 170, labelY: 345 },
+  ulsan: { code: '3100000000', shortName: '울산', labelX: 364, labelY: 365, isMetropolis: true },
+  // 부산: 경남/바다에 가려지지 않도록 부산 중심부 정밀 배치
+  busan: { code: '2600000000', shortName: '부산', labelX: 348, labelY: 398, isMetropolis: true },
+  'south-gyeongsang': { code: '4800000000', shortName: '경남', labelX: 275, labelY: 400 },
+  'north-jeolla': { code: '4500000000', shortName: '전북', labelX: 165, labelY: 345 },
   gwangju: { code: '2900000000', shortName: '광주', labelX: 140, labelY: 408, isMetropolis: true },
   'south-jeolla': { code: '4600000000', shortName: '전남', labelX: 135, labelY: 455 },
   jeju: { code: '5000000000', shortName: '제주', labelX: 112, labelY: 609 },
@@ -100,7 +106,7 @@ export default function KoreaMap({
     );
   };
 
-  // 선택된 지역이 맨 위에 렌더링되도록 정렬 (외곽선 테두리 보호)
+  // 선택된 지역 폴리곤이 맨 위에 렌더링되도록 정렬 (외곽선 테두리 보호)
   const sortedLocations = [...koreaMap.locations].sort((a, b) => {
     const metaA = LOCATION_META[a.id];
     const metaB = LOCATION_META[b.id];
@@ -128,42 +134,52 @@ export default function KoreaMap({
           viewBox={koreaMap.viewBox || '0 0 524 631'}
           className="w-full h-full select-none"
         >
-          {/* 17개 광역시도 정밀 폴리곤 영역 */}
-          {sortedLocations.map((loc) => {
-            const meta = LOCATION_META[loc.id];
-            if (!meta) return null;
+          {/* LAYER 1: 17개 광역시도 면적 폴리곤 (모든 면적을 글씨보다 아래에 먼저 렌더링하여 글씨 가림 완전 차단) */}
+          <g id="map-polygons">
+            {sortedLocations.map((loc) => {
+              const meta = LOCATION_META[loc.id];
+              if (!meta) return null;
 
-            const isSelected = selectedRegion.code === meta.code;
-            const isHovered = hoveredCode === meta.code;
-            const fillColor = getRiskFillColor(meta.code);
+              const isSelected = selectedRegion.code === meta.code;
+              const isHovered = hoveredCode === meta.code;
+              const fillColor = getRiskFillColor(meta.code);
 
-            return (
-              <g
-                key={loc.id}
-                className="cursor-pointer transition-all"
-                onClick={() => {
-                  const found = REGIONS.find((r) => r.code === meta.code);
-                  if (found) onSelectRegion(found);
-                }}
-                onMouseEnter={() => setHoveredCode(meta.code)}
-                onMouseLeave={() => setHoveredCode(null)}
-              >
-                {/* 행정구역 폴리곤 면적 */}
+              return (
                 <path
+                  key={loc.id}
                   id={loc.id}
                   d={loc.path}
                   fill={fillColor}
-                  stroke={isSelected ? '#2E2B27' : isHovered ? '#6B6357' : '#B8AFA0'}
-                  strokeWidth={isSelected ? 3 : isHovered ? 1.8 : 1}
+                  stroke={isSelected ? '#24201C' : isHovered ? '#6B6357' : '#B8AFA0'}
+                  strokeWidth={isSelected ? 3.2 : isHovered ? 2 : 1}
                   strokeLinejoin="round"
-                  className="transition-colors duration-150"
+                  className="cursor-pointer transition-colors duration-150"
                   style={{
-                    filter: isSelected ? 'drop-shadow(0 3px 8px rgba(46,43,39,0.35))' : undefined,
+                    filter: isSelected ? 'drop-shadow(0 3px 8px rgba(36,32,28,0.4))' : undefined,
                   }}
+                  onClick={() => {
+                    const found = REGIONS.find((r) => r.code === meta.code);
+                    if (found) onSelectRegion(found);
+                  }}
+                  onMouseEnter={() => setHoveredCode(meta.code)}
+                  onMouseLeave={() => setHoveredCode(null)}
                 />
+              );
+            })}
+          </g>
 
-                {/* 지명 텍스트 라벨 (가독성을 위한 선명한 화이트 헤일로) */}
+          {/* LAYER 2: 17개 광역시도 지명 라벨 (모든 면적 폴리곤 위에 렌더링되므로 절대 가려지지 않음) */}
+          <g id="map-labels" className="pointer-events-none">
+            {sortedLocations.map((loc) => {
+              const meta = LOCATION_META[loc.id];
+              if (!meta) return null;
+
+              const isSelected = selectedRegion.code === meta.code;
+              const isHovered = hoveredCode === meta.code;
+
+              return (
                 <text
+                  key={`label-${loc.id}`}
                   x={meta.labelX}
                   y={meta.labelY}
                   textAnchor="middle"
@@ -171,22 +187,22 @@ export default function KoreaMap({
                   style={{
                     paintOrder: 'stroke fill',
                     stroke: '#FAF8F5',
-                    strokeWidth: isSelected ? '4px' : '3px',
+                    strokeWidth: isSelected ? '4.5px' : '3.5px',
                     strokeLinejoin: 'round',
                   }}
-                  className={`select-none pointer-events-none transition-all ${
+                  className={`select-none transition-all ${
                     isSelected
-                      ? 'fill-[#141312] font-black'
+                      ? 'fill-[#12100E] font-black'
                       : isHovered
-                      ? 'fill-[#1F1D1A] font-extrabold'
+                      ? 'fill-[#1C1A17] font-extrabold'
                       : 'fill-[#3A3530] font-bold'
-                  } ${meta.isMetropolis ? 'text-[13px]' : 'text-[14px]'}`}
+                  } ${meta.isMetropolis ? 'text-[11.5px]' : 'text-[12.5px]'}`}
                 >
                   {meta.shortName}
                 </text>
-              </g>
-            );
-          })}
+              );
+            })}
+          </g>
         </svg>
       </div>
 

@@ -140,7 +140,8 @@ export default function PollenSummaryCard({
   ];
 
   return (
-    <div className="bg-white border border-[#ECE7DE] rounded-2xl p-5 sm:p-7 flex flex-col justify-between h-full shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-5">
+    <>
+      <div className="bg-white border border-[#ECE7DE] rounded-2xl p-5 sm:p-7 flex flex-col justify-between h-full shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-5">
       {/* 상단: 지역명 & 오늘/내일/모레 탭 (모바일 줄바꿈 방지) */}
       <div>
         <div className="flex items-center justify-between text-xs sm:text-sm text-[#7A726A] mb-2.5">
@@ -264,112 +265,113 @@ export default function PollenSummaryCard({
         <button
           type="button"
           onClick={() => setShowGuidelines(true)}
-          className="w-full py-2.5 px-4 rounded-xl bg-[#FAF8F5] hover:bg-[#F2EDE4] border border-[#ECE7DE] text-xs sm:text-sm font-semibold text-[#544E47] hover:text-[#1F1D1A] transition-all flex items-center justify-center gap-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+          className="w-full py-2.5 px-4 rounded-xl bg-[#FAF8F5] hover:bg-[#F2EDE4] active:scale-[0.99] border border-[#ECE7DE] text-xs sm:text-sm font-semibold text-[#544E47] hover:text-[#1F1D1A] transition-all flex items-center justify-center gap-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] cursor-pointer"
         >
           <span>📋</span>
           <span>기상청 단계별 대응요령 안내</span>
         </button>
       </div>
+    </div>
 
-      {/* 대시보드를 해치지 않고 스윽 뜨는 공식 대응요령 모달 */}
-      {showGuidelines && (
+    {/* 대시보드를 해치지 않고 스윽 뜨는 공식 대응요령 모달 (카드 외부 분리로 레이아웃 절대 불변) */}
+    {showGuidelines && (
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/45 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+        onClick={() => setShowGuidelines(false)}
+      >
         <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/45 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
-          onClick={() => setShowGuidelines(false)}
+          className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-[#ECE7DE] p-5 sm:p-6 flex flex-col max-h-[88vh] overflow-hidden transition-all transform animate-in zoom-in-95 duration-200"
+          onClick={(e) => e.stopPropagation()}
         >
-          <div
-            className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-[#ECE7DE] p-5 sm:p-6 flex flex-col max-h-[88vh] overflow-hidden transition-all transform animate-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* 모달 헤더 */}
-            <div className="flex items-center justify-between pb-3.5 border-b border-[#ECE7DE]">
-              <div className="flex items-center gap-2.5">
-                <span className="text-xl">📋</span>
-                <div>
-                  <h3 className="text-base sm:text-lg font-bold text-[#1F1D1A]">
-                    기상청 꽃가루 위험지수 단계별 대응요령
-                  </h3>
-                  <p className="text-[11px] sm:text-xs text-[#8C827A] mt-0.5">
-                    현재 선택: <span className="font-semibold text-[#4A443E]">{days.find((d) => d.key === selectedDay)?.label} ({dayRisk}단계 {status.title})</span>
-                  </p>
-                </div>
+          {/* 모달 헤더 */}
+          <div className="flex items-center justify-between pb-3.5 border-b border-[#ECE7DE]">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xl">📋</span>
+              <div>
+                <h3 className="text-base sm:text-lg font-bold text-[#1F1D1A]">
+                  기상청 꽃가루 위험지수 단계별 대응요령
+                </h3>
+                <p className="text-[11px] sm:text-xs text-[#8C827A] mt-0.5">
+                  현재 선택: <span className="font-semibold text-[#4A443E]">{days.find((d) => d.key === selectedDay)?.label} ({dayRisk}단계 {status.title})</span>
+                </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowGuidelines(false)}
-                className="p-1.5 rounded-lg text-[#8C827A] hover:text-[#1F1D1A] hover:bg-[#FAF8F5] transition-colors"
-                aria-label="닫기"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
             </div>
+            <button
+              type="button"
+              onClick={() => setShowGuidelines(false)}
+              className="p-1.5 rounded-lg text-[#8C827A] hover:text-[#1F1D1A] hover:bg-[#F2EDE4] active:scale-90 transition-all cursor-pointer group"
+              aria-label="닫기"
+            >
+              <svg className="w-5 h-5 transition-transform group-hover:rotate-90 duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
 
-            {/* 모달 본문 - 플러딩 없는 모던 카드 리스트 */}
-            <div className="mt-4 overflow-y-auto space-y-2.5 pr-1 text-xs">
-              {RESPONSE_GUIDELINES.map((item) => {
-                const isSelected = dayRisk === item.level;
-                return (
-                  <div
-                    key={item.step}
-                    className={`p-3.5 sm:p-4 rounded-xl border transition-all ${
-                      isSelected
-                        ? 'border-[#CBBDAA] bg-[#FBF9F5] shadow-xs'
-                        : 'border-[#EDE8E0] bg-[#FAF8F5]/60 hover:bg-[#FAF8F5]'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`px-2.5 py-0.5 rounded-md text-xs font-bold border ${item.badgeClass}`}
-                        >
-                          {item.step}
-                        </span>
-                        <span className="text-[11px] text-[#7A726A] font-medium">
-                          {item.range}
-                        </span>
-                      </div>
-                      {isSelected && (
-                        <span className="text-[10px] font-bold text-[#7A5B3E] bg-[#EFE7D8] px-2 py-0.5 rounded-full">
-                          현재 해당 단계
-                        </span>
-                      )}
+          {/* 모달 본문 - 플러딩 없는 모던 카드 리스트 */}
+          <div className="mt-4 overflow-y-auto space-y-2.5 pr-1 text-xs">
+            {RESPONSE_GUIDELINES.map((item) => {
+              const isSelected = dayRisk === item.level;
+              return (
+                <div
+                  key={item.step}
+                  className={`p-3.5 sm:p-4 rounded-xl border transition-all ${
+                    isSelected
+                      ? 'border-[#CBBDAA] bg-[#FBF9F5] shadow-xs'
+                      : 'border-[#EDE8E0] bg-[#FAF8F5]/60 hover:bg-[#FAF8F5]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-md text-xs font-bold border ${item.badgeClass}`}
+                      >
+                        {item.step}
+                      </span>
+                      <span className="text-[11px] text-[#7A726A] font-medium">
+                        {item.range}
+                      </span>
                     </div>
-                    <ul className="space-y-1.5 pl-0.5">
-                      {item.tips.map((tip, idx) => (
-                        <li
-                          key={idx}
-                          className="flex items-start gap-2 text-[#4A443E] leading-relaxed text-xs sm:text-[13px]"
-                        >
-                          <span className="text-[#9E958C] select-none text-[10px] mt-1 shrink-0">●</span>
-                          <span>{tip}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    {isSelected && (
+                      <span className="text-[10px] font-bold text-[#7A5B3E] bg-[#EFE7D8] px-2 py-0.5 rounded-full">
+                        현재 해당 단계
+                      </span>
+                    )}
                   </div>
-                );
-              })}
-            </div>
+                  <ul className="space-y-1.5 pl-0.5">
+                    {item.tips.map((tip, idx) => (
+                      <li
+                        key={idx}
+                        className="flex items-start gap-2 text-[#4A443E] leading-relaxed text-xs sm:text-[13px]"
+                      >
+                        <span className="text-[#9E958C] select-none text-[10px] mt-1 shrink-0">●</span>
+                        <span>{tip}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
 
-            {/* 모달 하단 - 의학자문 및 닫기 버튼 (줄바꿈 깨짐 방지) */}
-            <div className="pt-3.5 mt-3 border-t border-[#ECE7DE] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px] text-[#8C827A]">
-              <p className="leading-relaxed">
-                ※ 의학자문: 서울대학병원 운영 서울특별시 보라매 병원 내과 김덕겸, 허응영 서울의대 교수
-              </p>
-              <button
-                type="button"
-                onClick={() => setShowGuidelines(false)}
-                className="w-full sm:w-auto px-5 py-2 rounded-xl bg-[#2D2A26] hover:bg-[#1A1816] text-white text-xs font-semibold shrink-0 transition-colors whitespace-nowrap text-center"
-              >
-                닫기
-              </button>
-            </div>
+          {/* 모달 하단 - 의학자문 및 마우스 오버 반응형 닫기 버튼 */}
+          <div className="pt-3.5 mt-3 border-t border-[#ECE7DE] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px] text-[#8C827A]">
+            <p className="leading-relaxed">
+              ※ 의학자문: 서울대학병원 운영 서울특별시 보라매 병원 내과 김덕겸, 허응영 서울의대 교수
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowGuidelines(false)}
+              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#2D2A26] hover:bg-[#48423B] active:bg-[#1A1816] active:scale-95 text-white text-xs font-semibold shrink-0 transition-all duration-150 whitespace-nowrap text-center shadow-xs hover:shadow-md cursor-pointer"
+            >
+              닫기
+            </button>
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    )}
+  </>
   );
 }

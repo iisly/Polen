@@ -120,12 +120,12 @@ export default function KoreaMap({
   });
 
   return (
-    <div className="bg-white border border-[#ECE7DE] rounded-2xl p-2 sm:p-4 flex flex-col justify-center items-center h-full shadow-[0_2px_8px_rgba(0,0,0,0.02)] relative overflow-hidden min-h-[380px] sm:min-h-[460px]">
+    <div className="bg-white border border-[#ECE7DE] rounded-2xl p-3 sm:p-5 flex flex-col justify-center items-center h-full shadow-[0_2px_8px_rgba(0,0,0,0.02)] relative min-h-[400px] sm:min-h-[480px]">
       {/* 🧭 내 위치 플로팅 버튼 (우측 상단 바다 위에 부유) */}
       <button
         onClick={handleDetectLocation}
         disabled={isLocating}
-        className="absolute top-3 right-3 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-md border border-[#E0D9CD] hover:bg-white hover:border-[#BCB3A4] active:scale-95 rounded-xl text-[#3A3530] shadow-xs transition text-xs font-bold"
+        className="absolute top-3.5 right-3.5 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-md border border-[#E0D9CD] hover:bg-white hover:border-[#BCB3A4] active:scale-95 rounded-xl text-[#3A3530] shadow-xs transition text-xs font-bold"
         title="GPS로 내 위치 찾기"
       >
         <Navigation className={`w-3.5 h-3.5 text-[#5F7556] ${isLocating ? 'animate-spin' : ''}`} />
@@ -133,7 +133,7 @@ export default function KoreaMap({
       </button>
 
       {/* 🎨 위험도 단계 플로팅 인디케이터 (우측 하단 바다 위에 컴팩트하게 세로 부유) */}
-      <div className="absolute bottom-3 right-3 z-20 flex flex-col gap-1 sm:gap-1.5 px-2.5 py-2 bg-white/90 backdrop-blur-md border border-[#E0D9CD] rounded-xl shadow-xs text-[10px] sm:text-[11px] text-[#544E47] font-bold">
+      <div className="absolute bottom-3.5 right-3.5 z-20 flex flex-col gap-1 sm:gap-1.5 px-2.5 py-2 bg-white/90 backdrop-blur-md border border-[#E0D9CD] rounded-xl shadow-xs text-[10px] sm:text-[11px] text-[#544E47] font-bold">
         <span className="text-[10px] text-[#5F7556] font-extrabold pb-1 border-b border-[#EAE5DC] block text-center">
           {dayLabel}
         </span>
@@ -155,11 +155,11 @@ export default function KoreaMap({
         </div>
       </div>
 
-      {/* 업계 표준 @svg-maps/south-korea 기반 대한민국 17개 광역시도 대형 정밀 벡터 지도 */}
-      <div className="w-full h-full max-w-[420px] aspect-[524/631] relative mx-auto my-auto flex items-center justify-center p-1 sm:p-2">
+      {/* 대한민국 17개 광역시도 정밀 벡터 지도 (카드의 넉넉한 공간을 시원하게 활용 & 울릉도/독도 특수효과 여백 100% 확보) */}
+      <div className="w-full flex-1 flex items-center justify-center relative my-auto py-2 sm:py-3 px-1 sm:px-2">
         <svg
-          viewBox={koreaMap.viewBox || '0 0 524 631'}
-          className="w-full h-full select-none"
+          viewBox="-20 -15 565 660"
+          className="w-full h-full max-h-[510px] select-none overflow-visible"
         >
           {/* LAYER 1: 17개 광역시도 면적 폴리곤 (모든 면적을 글씨보다 아래에 먼저 렌더링하여 글씨 가림 완전 차단) */}
           <g id="map-polygons">

@@ -7,33 +7,94 @@ function getKstDateTime() {
   const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
   const kst = new Date(utc + (9 * 3600000));
   
-  const year = kst.getFullYear();
-  const month = String(kst.getMonth() + 1).padStart(2, '0');
-  const day = String(kst.getDate()).padStart(2, '0');
-  const hour = kst.getHours();
   const currentMonthNum = kst.getMonth() + 1;
+  const hour = kst.getHours();
 
-  let baseDate = `${year}${month}${day}`;
+  let targetDate = kst;
   let baseHour = '06';
 
+  // 기상청 꽃가루 위험지수는 매일 06:00, 18:00 하루 2회 발표됩니다.
+  // 06:00 이전(새벽)에는 전일 18:00 발표 자료를 조회하고 표기합니다.
   if (hour < 6) {
-    const yesterday = new Date(kst.getTime() - 24 * 3600000);
-    const yYear = yesterday.getFullYear();
-    const yMonth = String(yesterday.getMonth() + 1).padStart(2, '0');
-    const yDay = String(yesterday.getDate()).padStart(2, '0');
-    baseDate = `${yYear}${yMonth}${yDay}`;
+    targetDate = new Date(kst.getTime() - 24 * 3600000);
     baseHour = '18';
   } else if (hour >= 18) {
+    targetDate = kst;
     baseHour = '18';
   } else {
+    targetDate = kst;
     baseHour = '06';
   }
+
+  const y = targetDate.getFullYear();
+  const m = String(targetDate.getMonth() + 1).padStart(2, '0');
+  const d = String(targetDate.getDate()).padStart(2, '0');
+  const baseDate = `${y}${m}${d}`;
 
   return {
     timeStr: `${baseDate}${baseHour}`,
     currentMonthNum,
-    displayDate: `${year}.${month}.${day} ${hour >= 18 ? '18:00' : '06:00'} 기준`,
+    displayDate: `${y}.${m}.${d} ${baseHour}:00 발표 기준`,
   };
+}
+
+// 전국 17개 시도 위험도 인메모리 캐시 (30분 유효)
+let nationwideCache: {
+  timeKey: string;
+  timestamp: number;
+  risks: Record<string, RiskLevel>;
+} | null = null;
+
+async function getNationwideRisks(apiKey: string, timeStr: string, activeMonth: number): Promise<Record<string, RiskLevel>> {
+  const now = Date.now();
+  if (nationwideCache && nationwideCache.timeKey === timeStr && (now - nationwideCache.timestamp < 30 * 60 * 1000)) {
+    return nationwideCache.risks;
+  }
+
+  const risks: Record<string, RiskLevel> = {};
+  REGIONS.forEach((r) => { risks[r.code] = 0; });
+
+  if (!apiKey) return risks;
+
+  const activeTypes = (['oak', 'pine', 'weeds'] as PollenType[]).filter(
+    (t) => POLLEN_SPECIES_INFO[t].seasonMonths.includes(activeMonth)
+  );
+
+  if (activeTypes.length === 0) {
+    nationwideCache = { timeKey: timeStr, timestamp: now, risks };
+    return risks;
+  }
+
+  try {
+    await Promise.all(
+      REGIONS.map(async (reg) => {
+        try {
+          const typePromises = activeTypes.map(async (t) => {
+            const opName = POLLEN_SPECIES_INFO[t].endpoint;
+            const url = `https://apis.data.go.kr/1360000/HealthWthrIdxServiceV3/${opName}?serviceKey=${encodeURIComponent(apiKey)}&pageNo=1&numOfRows=1&dataType=JSON&areaNo=${reg.code}&time=${timeStr}`;
+            const res = await fetch(url, { next: { revalidate: 1800 } });
+            if (!res.ok) return 0;
+            const data = await res.json();
+            if (data?.response?.header?.resultCode !== '00') return 0;
+            const item = data?.response?.body?.items?.item?.[0];
+            if (!item) return 0;
+            const rawVal = item.today !== '' ? item.today : item.tomorrow;
+            const num = parseInt(String(rawVal), 10);
+            return isNaN(num) || num < 0 ? 0 : num > 3 ? 3 : (num as RiskLevel);
+          });
+          const typeRisks = await Promise.all(typePromises);
+          risks[reg.code] = Math.max(0, ...typeRisks) as RiskLevel;
+        } catch {
+          risks[reg.code] = 0;
+        }
+      })
+    );
+    nationwideCache = { timeKey: timeStr, timestamp: now, risks };
+  } catch (err) {
+    console.error('Nationwide risks fetch error:', err);
+  }
+
+  return risks;
 }
 
 // 모든 지수를 0(안전/비산기)으로 초기화
@@ -189,6 +250,8 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    const regionalRisks = await getNationwideRisks(apiKey, timeStr, currentMonthNum);
+
     if (hasLiveSuccess) {
       const maxTodayRisk = Math.max(liveItems.oak.today, liveItems.pine.today, liveItems.weeds.today) as RiskLevel;
       return NextResponse.json<PollenApiResponse>({
@@ -198,6 +261,7 @@ export async function GET(request: NextRequest) {
         forecastDate: displayDate,
         items: liveItems,
         maxTodayRisk,
+        regionalRisks,
         message: '기상청 공공데이터를 정상적으로 실시간 수신했습니다.',
       });
     }
@@ -211,6 +275,7 @@ export async function GET(request: NextRequest) {
       forecastDate: displayDate,
       items: defaultItems,
       maxTodayRisk: 0,
+      regionalRisks,
       message: '기상청 공공데이터포털 서버 연결 실패 또는 서비스 점검 중으로 실시간 데이터를 수신하지 못했습니다. (비산기가 아닌 수종은 기본 0으로 표시됩니다.)',
     });
   } catch (err: any) {

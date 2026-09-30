@@ -43,29 +43,29 @@ export default function PollenSummaryCard({
         return {
           title: '안전',
           sub: '꽃가루 영향이 거의 없어 외출과 실내 환기에 자유롭습니다.',
-          badge: '0단계 · 낮음',
           dotColor: 'bg-[#5F7556]',
+          barColor: '#5F7556',
         };
       case 1:
         return {
           title: '보통',
           sub: '예민한 비염 환자는 외출 시 마스크를 챙기세요.',
-          badge: '1단계 · 보통',
           dotColor: 'bg-[#BFA15F]',
+          barColor: '#BFA15F',
         };
       case 2:
         return {
           title: '높음',
           sub: '꽃가루 비산량이 많습니다. 외출 시 KF 마스크를 착용하세요.',
-          badge: '2단계 · 높음',
           dotColor: 'bg-[#C28C7E]',
+          barColor: '#C28C7E',
         };
       case 3:
         return {
           title: '매우높음',
           sub: '야외 활동을 자제하고 귀가 후 즉시 코세척을 권장합니다.',
-          badge: '3단계 · 위험',
           dotColor: 'bg-[#A85848]',
+          barColor: '#A85848',
         };
     }
   };
@@ -86,48 +86,48 @@ export default function PollenSummaryCard({
 
   return (
     <div className="bg-white border border-[#ECE7DE] rounded-2xl p-5 sm:p-7 flex flex-col justify-between h-full shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-5">
-      {/* 상단: 지역명 & 오늘/내일/모레 3일간 예보 탭 */}
+      {/* 상단: 지역명 & 오늘/내일/모레 탭 (모바일 줄바꿈 방지) */}
       <div>
-        <div className="flex items-center justify-between text-xs sm:text-sm text-[#7A726A] mb-2">
+        <div className="flex items-center justify-between text-xs sm:text-sm text-[#7A726A] mb-2.5">
           <span className="font-semibold text-[#4A443E]">{region.name} 기상청 예보</span>
           <span className="text-xs text-[#9E958C]">{forecastDate}</span>
         </div>
 
-        {/* 3일 예보 선택 세그먼트 버튼 (시원한 폰트) */}
-        <div className="grid grid-cols-3 gap-2 p-1.5 bg-[#FAF8F5] border border-[#ECE7DE] rounded-xl mb-4">
+        {/* 3일 예보 선택 탭 버튼 (whitespace-nowrap & 모바일 최적화) */}
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2 p-1.5 bg-[#FAF8F5] border border-[#ECE7DE] rounded-xl mb-4">
           {days.map((d) => {
             const isCurrent = selectedDay === d.key;
             return (
               <button
                 key={d.key}
                 onClick={() => setSelectedDay(d.key)}
-                className={`py-2 px-3 rounded-lg text-xs sm:text-sm transition-all flex items-center justify-center gap-2 ${
+                className={`py-2 px-1.5 sm:px-3 rounded-lg text-xs sm:text-sm transition-all flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap select-none ${
                   isCurrent
                     ? 'bg-white text-[#1F1D1A] font-bold shadow-xs border border-[#DFD8CC]'
                     : 'text-[#635C54] hover:text-[#1F1D1A] font-medium'
                 }`}
               >
                 <span>{d.label}</span>
-                <span className={`text-xs px-2 py-0.5 rounded font-semibold ${
+                <span className={`text-[11px] sm:text-xs px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${
                   d.risk === 0 ? 'bg-[#EDE9E1] text-[#544E47]' : 'bg-[#F7ECE9] text-[#9E3622]'
                 }`}>
-                  {d.risk === 0 ? '0단계' : `${d.risk}단계`}
+                  {d.risk}단계
                 </span>
               </button>
             );
           })}
         </div>
 
-        {/* 선택된 일자의 종합 지수 */}
-        <div className="flex items-baseline justify-between gap-2 border-b border-[#F4EFE6] pb-4 mb-3">
-          <div className="flex items-center gap-3">
-            <span className={`w-3.5 h-3.5 rounded-full ${status.dotColor}`} />
-            <div>
-              <span className="text-2xl sm:text-3xl font-extrabold text-[#1F1D1A] tracking-tight">
+        {/* 선택 일자 종합 지수 (중복 라벨 제거) */}
+        <div className="flex items-baseline justify-between gap-2 border-b border-[#F4EFE6] pb-3 mb-2.5">
+          <div className="flex items-center gap-2.5">
+            <span className={`w-3.5 h-3.5 rounded-full shrink-0 ${status.dotColor}`} />
+            <div className="flex items-baseline gap-2">
+              <span className="text-xl sm:text-2xl font-black text-[#1F1D1A] tracking-tight whitespace-nowrap">
                 {days.find((d) => d.key === selectedDay)?.label} 위험도
               </span>
-              <span className="text-xs sm:text-sm px-2.5 py-0.5 rounded-full bg-[#F5F2EB] text-[#4A443E] font-semibold ml-2.5 align-middle">
-                {status.badge}
+              <span className="text-xs sm:text-sm px-2 py-0.5 rounded-full bg-[#F5F2EB] text-[#4A443E] font-bold whitespace-nowrap">
+                {dayRisk}단계
               </span>
             </div>
           </div>
@@ -139,17 +139,40 @@ export default function PollenSummaryCard({
           </div>
         </div>
 
-        <p className="text-sm text-[#4A443E] leading-relaxed font-medium">
+        <p className="text-xs sm:text-sm text-[#4A443E] leading-relaxed font-medium mb-3">
           {status.sub}
         </p>
+
+        {/* 현재 일자의 0~3 위험 단계 게이지 바 (직접 연결) */}
+        <div className="space-y-1.5">
+          <div className="grid grid-cols-4 gap-2 h-2.5 bg-[#F5F2EB] rounded-full overflow-hidden">
+            {[0, 1, 2, 3].map((lvl) => {
+              const isFilled = dayRisk >= lvl;
+              return (
+                <div
+                  key={lvl}
+                  className={`h-full rounded-full transition-all duration-300 ${
+                    isFilled ? status.dotColor : 'bg-transparent'
+                  }`}
+                />
+              );
+            })}
+          </div>
+          <div className="flex justify-between text-[11px] sm:text-xs text-[#8C827A] px-1 font-medium">
+            <span>0 낮음</span>
+            <span>1 보통</span>
+            <span>2 높음</span>
+            <span>3 매우높음</span>
+          </div>
+        </div>
       </div>
 
-      {/* 3대 수종별 선택 일자 위험도 (폰트 확대) */}
+      {/* 3대 수종별 선택 일자 위험도 (줄바꿈 방지) */}
       <div className="space-y-2">
         <span className="text-xs sm:text-sm font-bold text-[#544E47] block">
           수종별 {days.find((d) => d.key === selectedDay)?.label} 예보
         </span>
-        <div className="grid grid-cols-3 gap-2.5 text-center">
+        <div className="grid grid-cols-3 gap-2 sm:gap-2.5 text-center">
           {speciesList.map(({ key, label, season }) => {
             const risk = getSpeciesRisk(key, selectedDay);
             const isActive = items[key]?.isActiveSeason ?? false;
@@ -157,22 +180,22 @@ export default function PollenSummaryCard({
             return (
               <div
                 key={key}
-                className="p-3 rounded-xl border border-[#EDE8E0] bg-[#FAF8F5] flex flex-col justify-between"
+                className="p-2.5 sm:p-3 rounded-xl border border-[#EDE8E0] bg-[#FAF8F5] flex flex-col justify-between"
               >
                 <div>
-                  <span className="font-bold text-[#1F1D1A] block text-sm">
+                  <span className="font-bold text-[#1F1D1A] block text-xs sm:text-sm whitespace-nowrap">
                     {label}
                   </span>
-                  <span className="text-xs text-[#7A726A] block mt-0.5">
+                  <span className="text-[11px] text-[#7A726A] block mt-0.5 whitespace-nowrap">
                     {season.split(' ')[0]}
                   </span>
                 </div>
-                <div className="mt-2.5 pt-2 border-t border-[#EAE5DC] flex items-baseline justify-center gap-1">
+                <div className="mt-2 pt-2 border-t border-[#EAE5DC] flex items-baseline justify-center gap-1 whitespace-nowrap">
                   <span className="font-black text-[#1F1D1A] text-base sm:text-lg">
                     {risk}
                   </span>
-                  <span className="text-xs font-medium text-[#7A726A]">
-                    {isActive ? '단계' : '(비산기 아님)'}
+                  <span className="text-[11px] sm:text-xs font-semibold text-[#7A726A] whitespace-nowrap">
+                    {isActive ? '단계' : '비산기외'}
                   </span>
                 </div>
               </div>
@@ -181,30 +204,53 @@ export default function PollenSummaryCard({
         </div>
       </div>
 
-      {/* 3일간 예보 타임라인 요약 바 */}
-      <div className="space-y-1.5 pt-1">
-        <div className="flex justify-between text-xs font-semibold text-[#544E47]">
-          <span>3일간 추이</span>
-          <span>{days.map((d) => `${d.label} ${d.risk}단계`).join(' · ')}</span>
+      {/* 진정한 3일간 추이 타임라인 카드 (클릭 시 해당 일자로 즉시 전환) */}
+      <div className="space-y-2 pt-1 border-t border-[#F5F2EB]">
+        <div className="flex items-center justify-between text-xs font-bold text-[#544E47]">
+          <span>3일간 추이 타임라인</span>
+          <span className="text-[11px] text-[#8C827A] font-medium">탭 클릭 시 해당일 선택</span>
         </div>
-        <div className="grid grid-cols-4 gap-2 h-2 bg-[#F5F2EB] rounded-full overflow-hidden">
-          {[0, 1, 2, 3].map((lvl) => {
-            const isFilled = dayRisk >= lvl;
+
+        <div className="grid grid-cols-3 gap-2">
+          {days.map((d) => {
+            const isSelected = selectedDay === d.key;
+            const dayStatus = getRiskInfo(d.risk);
+            const barWidthPercent = d.risk === 0 ? 15 : ((d.risk + 1) / 4) * 100;
+
             return (
-              <div
-                key={lvl}
-                className={`h-full rounded-full transition-all duration-300 ${
-                  isFilled ? status.dotColor : 'bg-transparent'
+              <button
+                key={d.key}
+                onClick={() => setSelectedDay(d.key)}
+                className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                  isSelected
+                    ? 'border-[#5F7556] bg-[#FAF8F5] ring-1 ring-[#5F7556]/30 shadow-xs'
+                    : 'border-[#EDE8E0] bg-white hover:bg-[#F9F7F3]'
                 }`}
-              />
+              >
+                <div className="flex items-center justify-between gap-1 mb-1.5">
+                  <span className="text-xs sm:text-sm font-bold text-[#1F1D1A] whitespace-nowrap">
+                    {d.label}
+                  </span>
+                  <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${
+                    d.risk === 0 ? 'bg-[#EDE9E1] text-[#544E47]' : 'bg-[#F7ECE9] text-[#9E3622]'
+                  }`}>
+                    {d.risk}단계 · {dayStatus.title}
+                  </span>
+                </div>
+
+                {/* 해당 일자의 전용 게이지 바 */}
+                <div className="w-full h-1.5 bg-[#EDE8E0] rounded-full overflow-hidden mt-1">
+                  <div
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{
+                      width: `${barWidthPercent}%`,
+                      backgroundColor: dayStatus.barColor,
+                    }}
+                  />
+                </div>
+              </button>
             );
           })}
-        </div>
-        <div className="flex justify-between text-xs text-[#8C827A] px-0.5 pt-0.5">
-          <span>0 낮음</span>
-          <span>1 보통</span>
-          <span>2 높음</span>
-          <span>3 매우높음</span>
         </div>
       </div>
     </div>

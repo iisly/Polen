@@ -43,6 +43,7 @@ export interface PollenApiResponse {
   items: Record<PollenType, PollenForecastItem>;
   maxTodayRisk: RiskLevel;
   message?: string;
+  regionalRisks?: Record<string, RiskLevel>;
 }
 
 export interface PatientTip {

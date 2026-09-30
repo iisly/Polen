@@ -91,6 +91,7 @@ export default function Home() {
             <KoreaMap
               selectedRegion={selectedRegion}
               onSelectRegion={(reg) => setSelectedRegion(reg)}
+              regionalRisks={pollenData?.regionalRisks}
             />
           </div>
 

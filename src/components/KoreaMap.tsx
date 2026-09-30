@@ -187,7 +187,7 @@ export default function KoreaMap({
                   style={{
                     paintOrder: 'stroke fill',
                     stroke: '#FAF8F5',
-                    strokeWidth: isSelected ? '4.5px' : '3.5px',
+                    strokeWidth: isSelected ? '5px' : '4px',
                     strokeLinejoin: 'round',
                   }}
                   className={`select-none transition-all ${
@@ -196,7 +196,7 @@ export default function KoreaMap({
                       : isHovered
                       ? 'fill-[#1C1A17] font-extrabold'
                       : 'fill-[#3A3530] font-bold'
-                  } ${meta.isMetropolis ? 'text-[11.5px]' : 'text-[12.5px]'}`}
+                  } ${meta.isMetropolis ? 'text-[13.5px]' : 'text-[15px]'}`}
                 >
                   {meta.shortName}
                 </text>

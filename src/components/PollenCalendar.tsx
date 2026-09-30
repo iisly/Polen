@@ -110,7 +110,7 @@ export default function PollenCalendar() {
       </div>
 
       <div className="pt-2 text-xs text-[#7A726A] border-t border-[#F7F4EE] leading-relaxed">
-        💡 <strong>시기별 대처:</strong> 4~5월 봄철 외출 시 KF 마스크 착용, 8~10월 가을철 환삼덩굴·돼지풀 비산기에는 외출 1~2시간 전 항히스타민제 복용이 효과적입니다.
+        💡 <strong>외출 관리 팁:</strong> 봄·가을철 모두 <strong>KF 마스크 착용</strong>과 <strong>항히스타민제</strong>가 기본 대응입니다. 특히 가을철 잡초류는 증상이 빠르게 나타나므로 외출 1~2시간 전 미리 약을 복용하면 더욱 효과적입니다.
       </div>
     </div>
   );

@@ -92,17 +92,17 @@ export default function AntihistamineGuide() {
             <button
               key={key}
               onClick={() => setSelected(key)}
-              className={`p-2.5 sm:p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between ${
+              className={`p-2.5 sm:p-3.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center ${
                 isSelected
                   ? 'border-[#5F7556] bg-[#FAF8F5] text-[#1F1D1A] ring-1 ring-[#5F7556]/20 shadow-xs'
                   : 'border-[#EDE8E0] bg-white text-[#544E47] hover:bg-[#F9F7F3]'
               }`}
             >
-              <div>
-                <span className="text-xs sm:text-sm font-extrabold block text-[#1F1D1A] whitespace-nowrap">
+              <div className="w-full text-center">
+                <span className="text-xs sm:text-sm font-extrabold block text-[#1F1D1A] whitespace-nowrap text-center">
                   {item.name}
                 </span>
-                <span className="text-[11px] sm:text-xs text-[#7A726A] block mt-0.5 whitespace-nowrap">
+                <span className="text-[11px] sm:text-xs text-[#7A726A] block mt-0.5 whitespace-nowrap text-center">
                   {item.brand.split(' ')[0]}
                 </span>
               </div>

@@ -67,7 +67,7 @@ export const metadata: Metadata = {
   verification: {
     google:
       process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ||
-      '1p7h3u3A7QcR4YjIPKkZSWvAYzTYI4yenLcGI2NsYL4',
+      '0ppTEUKGqQFTTxb9uV6PV3uzYP2XzVTBtZdw7WKWtBs',
     other: {
       'naver-site-verification':
         process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION ||

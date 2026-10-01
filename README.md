@@ -1,11 +1,5 @@
 # Polen - 꽃가루 알레르기 케어
-> **기상청_꽃가루농도위험지수 조회서비스(3.0)** 기반 계절성 알레르기 및 비염 환자 맞춤 케어 웹서비스
-
-![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat&logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat&logo=typescript)
-![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-4-38bdf8?style=flat&logo=tailwindcss)
-
-https://polen-nu.vercel.app/
+기상청_꽃가루농도위험지수 조회서비스(3.0) 기반 계절성 알레르기 및 비염 환자 맞춤 케어 웹서비스
 
 ## 주요 기능
 
@@ -22,3 +16,7 @@ https://polen-nu.vercel.app/
    - 알레르기 인들의 필수 아이템 항히스타민제 안내
 5. **대한민국 연간 12개월 꽃가루 달력**
    - 봄철 수목류와 가을철 초본류의 연간 발생 타임라인 안내
+
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat&logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-4-38bdf8?style=flat&logo=tailwindcss)

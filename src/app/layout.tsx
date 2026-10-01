@@ -65,11 +65,13 @@ export const metadata: Metadata = {
     apple: '/favicon.svg',
   },
   verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+    google:
+      process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ||
+      '1p7h3u3A7QcR4YjIPKkZSWvAYzTYI4yenLcGI2NsYL4',
     other: {
-      ...(process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION
-        ? { 'naver-site-verification': process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION }
-        : {}),
+      'naver-site-verification':
+        process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION ||
+        'ab3f5e0eb58061a5a02146fb5aafbbe171fb56a0',
     },
   },
 };

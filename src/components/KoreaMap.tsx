@@ -6,7 +6,7 @@ import { REGIONS } from '@/lib/constants';
 import { Region, RiskValue } from '@/types/pollen';
 import { getRiskMeta, RISK_LEVEL_META } from '@/lib/risk';
 import { findClosestRegion } from '@/lib/geo';
-import { Navigation } from 'lucide-react';
+import { Navigation, ChevronDown } from 'lucide-react';
 
 interface KoreaMapProps {
   selectedRegion: Region;
@@ -102,7 +102,7 @@ export default function KoreaMap({
         </button>
 
         {/* 지역 선택 플로팅 셀렉트 (모바일/PC 공통) */}
-        <div className="relative">
+        <div className="relative flex items-center">
           <select
             id="region-select"
             value={selectedRegion.code}
@@ -111,7 +111,7 @@ export default function KoreaMap({
               if (found) onSelectRegion(found);
             }}
             aria-label="지역 선택"
-            className="text-xs pl-2.5 pr-7 py-1.5 rounded-xl border border-[#E0D9CD] bg-white/95 backdrop-blur-md text-[#3A3530] font-bold shadow-xs hover:border-[#BCB3A4] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#5F7556]"
+            className="appearance-none text-xs pl-3 pr-7 py-1.5 rounded-xl border border-[#E0D9CD] bg-white/95 backdrop-blur-md text-[#3A3530] font-bold shadow-xs hover:border-[#BCB3A4] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#5F7556]"
           >
             {REGIONS.map((r) => (
               <option key={r.code} value={r.code}>
@@ -119,6 +119,7 @@ export default function KoreaMap({
               </option>
             ))}
           </select>
+          <ChevronDown className="w-3.5 h-3.5 text-[#8C827A] absolute right-2 pointer-events-none" />
         </div>
 
         {geoNotice && (

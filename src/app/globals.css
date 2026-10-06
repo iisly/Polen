@@ -13,10 +13,4 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* 깔끔한 미니멀 셀렉트 화살표 제거 및 커스텀 스타일 */
-select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238C827A'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 1rem;
-}
+/* 미니멀 스타일 리셋 */

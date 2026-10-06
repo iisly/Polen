@@ -88,8 +88,8 @@ export default function KoreaMap({
 
   return (
     <div className="bg-white border border-[#ECE7DE] rounded-2xl p-3 sm:p-5 flex flex-col justify-between h-full shadow-[0_2px_8px_rgba(0,0,0,0.02)] relative min-h-[440px] sm:min-h-[490px]">
-      {/* 🧭 내 위치 플로팅 버튼 */}
-      <div className="absolute top-3.5 right-3.5 z-20 flex flex-col items-end gap-1">
+      {/* 🧭 우측 상단 플로팅 컨트롤: 내 위치 + 지역 선택 드롭다운 */}
+      <div className="absolute top-3.5 right-3.5 z-20 flex flex-col items-end gap-1.5">
         <button
           onClick={handleDetectLocation}
           disabled={isLocating}
@@ -100,53 +100,32 @@ export default function KoreaMap({
           <Navigation className={`w-3.5 h-3.5 text-[#5F7556] ${isLocating ? 'animate-spin' : ''}`} />
           <span>{isLocating ? '위치 탐색 중' : '내 위치'}</span>
         </button>
+
+        {/* 지역 선택 플로팅 셀렉트 (모바일/PC 공통) */}
+        <div className="relative">
+          <select
+            id="region-select"
+            value={selectedRegion.code}
+            onChange={(e) => {
+              const found = REGIONS.find((r) => r.code === e.target.value);
+              if (found) onSelectRegion(found);
+            }}
+            aria-label="지역 선택"
+            className="text-xs pl-2.5 pr-7 py-1.5 rounded-xl border border-[#E0D9CD] bg-white/95 backdrop-blur-md text-[#3A3530] font-bold shadow-xs hover:border-[#BCB3A4] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#5F7556]"
+          >
+            {REGIONS.map((r) => (
+              <option key={r.code} value={r.code}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {geoNotice && (
           <span className="text-[11px] font-semibold text-[#5F7556] bg-white/95 px-2 py-1 rounded-md border border-[#E0D9CD] shadow-xs animate-in fade-in">
             {geoNotice}
           </span>
         )}
-      </div>
-
-      {/* 🎨 위험도 범례 (단계 + 결측값 식별) */}
-      <div className="absolute bottom-3.5 right-3.5 z-20 flex flex-col gap-1 sm:gap-1.5 px-2.5 py-2 bg-white/95 backdrop-blur-md border border-[#E0D9CD] rounded-xl shadow-xs text-[10px] sm:text-[11px] text-[#544E47] font-bold">
-        <span className="text-[10px] text-[#5F7556] font-extrabold pb-1 border-b border-[#EAE5DC] block text-center">
-          {dayLabel}
-        </span>
-        {Object.values(RISK_LEVEL_META).map((m) => (
-          <div key={m.level} className="flex items-center gap-1.5">
-            <span
-              className="w-2.5 h-2.5 rounded-xs shrink-0"
-              style={{ backgroundColor: m.fillColor, border: `1px solid ${m.strokeColor}` }}
-            />
-            <span>{m.level} {m.title}</span>
-          </div>
-        ))}
-        <div className="flex items-center gap-1.5 border-t border-[#F0ECE4] pt-1 mt-0.5">
-          <span className="w-2.5 h-2.5 rounded-xs bg-[#E8E3DA] border border-[#C8BFB2] shrink-0" />
-          <span className="text-[#8C827A]">정보 없음</span>
-        </div>
-      </div>
-
-      {/* 접근성을 위한 키보드/스크린리더용 시·도 선택 셀렉트박스 */}
-      <div className="w-full mb-2 flex items-center justify-between sm:hidden">
-        <label htmlFor="mobile-region-select" className="text-xs font-bold text-[#544E47]">
-          지역 선택
-        </label>
-        <select
-          id="mobile-region-select"
-          value={selectedRegion.code}
-          onChange={(e) => {
-            const found = REGIONS.find((r) => r.code === e.target.value);
-            if (found) onSelectRegion(found);
-          }}
-          className="text-xs px-2.5 py-1.5 rounded-lg border border-[#DDD7CD] bg-white text-[#2D2A26] font-medium"
-        >
-          {REGIONS.map((r) => (
-            <option key={r.code} value={r.code}>
-              {r.name}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* 대한민국 17개 광역시·도 벡터 지도 */}
@@ -238,6 +217,26 @@ export default function KoreaMap({
             })}
           </g>
         </svg>
+      </div>
+
+      {/* 🎨 우측 하단 위험도 범례 (단계 + 결측값 식별) */}
+      <div className="absolute bottom-3.5 right-3.5 z-20 flex flex-col gap-1 sm:gap-1.5 px-2.5 py-2 bg-white/95 backdrop-blur-md border border-[#E0D9CD] rounded-xl shadow-xs text-[10px] sm:text-[11px] text-[#544E47] font-bold">
+        <span className="text-[10px] text-[#5F7556] font-extrabold pb-1 border-b border-[#EAE5DC] block text-center">
+          {dayLabel}
+        </span>
+        {Object.values(RISK_LEVEL_META).map((m) => (
+          <div key={m.level} className="flex items-center gap-1.5">
+            <span
+              className="w-2.5 h-2.5 rounded-xs shrink-0"
+              style={{ backgroundColor: m.fillColor, border: `1px solid ${m.strokeColor}` }}
+            />
+            <span>{m.level} {m.title}</span>
+          </div>
+        ))}
+        <div className="flex items-center gap-1.5 border-t border-[#F0ECE4] pt-1 mt-0.5">
+          <span className="w-2.5 h-2.5 rounded-xs bg-[#E8E3DA] border border-[#C8BFB2] shrink-0" />
+          <span className="text-[#8C827A]">정보 없음</span>
+        </div>
       </div>
     </div>
   );

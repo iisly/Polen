@@ -160,7 +160,7 @@ export default async function Image() {
               color: '#8C827A',
             }}
           >
-            polen.vercel.app
+            polen-nu.vercel.app
           </div>
         </div>
       </div>

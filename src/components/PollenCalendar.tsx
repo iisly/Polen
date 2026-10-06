@@ -4,8 +4,11 @@ import React from 'react';
 import { ANNUAL_POLLEN_CALENDAR } from '@/lib/constants';
 import { Calendar } from 'lucide-react';
 
-export default function PollenCalendar() {
-  const currentMonth = new Date().getMonth() + 1;
+interface PollenCalendarProps {
+  currentMonth?: number;
+}
+
+export default function PollenCalendar({ currentMonth = 4 }: PollenCalendarProps) {
 
   const getBadgeStyle = (level: number) => {
     switch (level) {

@@ -220,12 +220,7 @@ export const KMA_REGION_STATIONS: Record<string, StationPoint[]> = {
   ],
 };
 
-// 과반수 단계 계산 알고리즘: 관할 지점들 중 과반(50% 초과)을 차지하는 단계 또는 누적 중앙값(median)
-export function calculateMajorityRisk(risks: number[]): number {
-  if (!risks || risks.length === 0) return 0;
-  
-  // 정렬 후 중앙값(median): 절반 이상이 노출된 대표 단계
-  const sorted = [...risks].sort((a, b) => a - b);
-  const midIndex = Math.floor(sorted.length / 2);
-  return sorted[midIndex] ?? 0;
+/** 시·도의 관할 지점 목록. 매핑이 없으면 시·도 코드 자체를 단일 지점으로 사용합니다. */
+export function getRegionStations(regionCode: string, regionName: string): StationPoint[] {
+  return KMA_REGION_STATIONS[regionCode] ?? [{ code: regionCode, name: regionName }];
 }

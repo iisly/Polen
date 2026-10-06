@@ -1,4 +1,4 @@
-import { PollenType, RiskLevel, RiskLevelInfo, Region } from '@/types/pollen';
+import { PollenType, Region } from '@/types/pollen';
 
 export const REGIONS: Region[] = [
   { code: '1100000000', name: '서울특별시', shortName: '서울', lat: 37.5665, lng: 126.9780 },
@@ -45,6 +45,17 @@ export const POLLEN_SPECIES_INFO: Record<PollenType, {
     endpoint: 'getWeedsPollenRiskndxV3',
   },
 };
+
+export const POLLEN_TYPES: PollenType[] = ['oak', 'pine', 'weeds'];
+
+/** 해당 월(KST)에 기상청이 지수를 제공하는 수종 목록. `seasonMonths`가 단일 기준입니다. */
+export function getActivePollenTypes(month: number): PollenType[] {
+  return POLLEN_TYPES.filter((type) => POLLEN_SPECIES_INFO[type].seasonMonths.includes(month));
+}
+
+export function findRegion(code: string): Region | undefined {
+  return REGIONS.find((r) => r.code === code);
+}
 
 export interface MonthPollenInfo {
   month: number;

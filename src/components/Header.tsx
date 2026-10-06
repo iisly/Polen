@@ -5,22 +5,20 @@ import { RotateCw } from 'lucide-react';
 
 interface HeaderProps {
   isLiveConnected: boolean;
-  forecastDate: string;
-  onOpenApiKeyModal: () => void;
-  onRefresh: () => void;
-  isLoading: boolean;
+  forecastDate?: string;
+  onRefresh?: () => void;
+  isLoading?: boolean;
 }
 
 export default function Header({
   isLiveConnected,
   forecastDate,
-  onOpenApiKeyModal,
   onRefresh,
-  isLoading,
+  isLoading = false,
 }: HeaderProps) {
   return (
     <header className="border-b border-[#ECE7DE] bg-[#FAF8F5]/90 backdrop-blur-md sticky top-0 z-40">
-      <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* 로고 */}
         <div className="flex items-center gap-3">
           <span className="w-3 h-3 rounded-full bg-[#5F7556]" />
@@ -36,6 +34,13 @@ export default function Header({
 
         {/* 우측 컨트롤 */}
         <div className="flex items-center gap-3 text-sm text-[#5C554E]">
+          {/* 발표 시각 안내 */}
+          {forecastDate && (
+            <span className="text-xs text-[#8C827A] hidden md:inline">
+              {forecastDate}
+            </span>
+          )}
+
           {/* 상태 배지 */}
           <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[#F0ECE4] text-[#4A443E]">
             <span className={`w-2 h-2 rounded-full ${isLiveConnected ? 'bg-[#5F7556]' : 'bg-[#C28C7E]'}`} />
@@ -44,21 +49,17 @@ export default function Header({
             </span>
           </div>
 
-          <button
-            onClick={onRefresh}
-            disabled={isLoading}
-            className="p-2 text-[#7A726A] hover:text-[#2D2A26] hover:bg-[#F0ECE4] rounded-lg transition"
-            title="새로고침"
-          >
-            <RotateCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </button>
-
-          <button
-            onClick={onOpenApiKeyModal}
-            className="px-3 py-1.5 rounded-lg border border-[#DDD7CD] hover:bg-[#F0ECE4] text-[#4A443E] transition text-xs font-medium"
-          >
-            API 키
-          </button>
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              disabled={isLoading}
+              className="p-2 text-[#7A726A] hover:text-[#2D2A26] hover:bg-[#F0ECE4] rounded-lg transition"
+              title="새로고침"
+              aria-label="데이터 새로고침"
+            >
+              <RotateCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </button>
+          )}
         </div>
       </div>
     </header>

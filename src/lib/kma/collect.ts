@@ -31,8 +31,8 @@ import type {
 } from '@/types/pollen';
 
 const KMA_BASE_URL = 'https://apis.data.go.kr/1360000/HealthWthrIdxServiceV3';
-const REQUEST_TIMEOUT_MS = 8000;
-const CONCURRENCY = 12;
+const REQUEST_TIMEOUT_MS = 6000;
+const CONCURRENCY = 35;
 /** 이 비율 이상 수신되면 `ok`, 그 미만이면 `partial`. */
 const OK_COVERAGE = 0.95;
 /** 이 비율 미만이면 `error`. */
@@ -109,6 +109,28 @@ async function fetchStation(
   return { ok: false, reason: 'unreachable' };
 }
 
+/**
+ * 특정 발표 시각(`announcement`)의 데이터가 기상청에 업로드되었는지 대표 지점 1곳만 빠르게(약 150ms) 확인합니다.
+ */
+export async function probeAnnouncementReady(
+  now: Date,
+  apiKey: string,
+  announcement: Announcement,
+  fetcher: Fetcher = fetch,
+): Promise<boolean> {
+  const kst = toKst(now);
+  const activeTypes = getActivePollenTypes(kst.month);
+  if (activeTypes.length === 0 || !apiKey) return false;
+  const probe = await fetchStation(
+    fetcher,
+    apiKey,
+    activeTypes[0],
+    REGIONS[0].code,
+    formatAnnouncementParam(announcement),
+  );
+  return probe.ok && probe.series.some((v) => v !== null);
+}
+
 function emptySnapshot(
   now: Date,
   status: SnapshotStatus,
@@ -159,10 +181,12 @@ export async function collectSnapshot(
   const probeRegion = REGIONS[0];
   let announcement: Announcement | null = null;
   let probeReason = '';
+  let cachedProbeSeries: DaySeries | null = null;
   for (const candidate of [latest, previousAnnouncement(latest)]) {
     const probe = await fetchStation(fetcher, apiKey, activeTypes[0], probeRegion.code, formatAnnouncementParam(candidate));
     if (probe.ok && probe.series.some((v) => v !== null)) {
       announcement = candidate;
+      cachedProbeSeries = probe.series;
       break;
     }
     probeReason = probe.ok ? 'empty_series' : probe.reason;
@@ -176,7 +200,7 @@ export async function collectSnapshot(
   }
   const time = formatAnnouncementParam(announcement);
 
-  // 2. 전체 지점 × 활성 수종 조회 (동시 실행 수 제한)
+  // 2. 전체 지점 × 활성 수종 조회 (동시 실행 수 제한, 프로브 지점은 재사용)
   const regionStations = REGIONS.map((region) => ({
     region,
     stations: getRegionStations(region.code, region.name),
@@ -186,9 +210,12 @@ export async function collectSnapshot(
     for (const st of stations) uniqueStations.set(st.code, st);
   }
   const tasks = activeTypes.flatMap((type) => [...uniqueStations.keys()].map((code) => ({ type, code })));
-  const results = await mapWithConcurrency(tasks, CONCURRENCY, ({ type, code }) =>
-    fetchStation(fetcher, apiKey, type, code, time),
-  );
+  const results = await mapWithConcurrency(tasks, CONCURRENCY, async ({ type, code }) => {
+    if (cachedProbeSeries && type === activeTypes[0] && code === probeRegion.code) {
+      return { ok: true as const, series: cachedProbeSeries };
+    }
+    return fetchStation(fetcher, apiKey, type, code, time);
+  });
 
   const seriesByKey = new Map<string, DaySeries>();
   const failureReasons: Record<string, number> = {};

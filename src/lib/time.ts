@@ -115,11 +115,10 @@ export function secondsUntilNextBoundary(now: Date): number {
 }
 
 /**
- * 스냅샷이 현재 시각(`now`) 기준으로 오래되었는지 판정합니다.
+ * 스냅샷이 현재 시각(`now`) 기준으로 갱신이 필요한지 판정합니다.
  * - 자정(00:00 KST)이 지나 날짜(오늘/내일/모레 라벨)가 바뀐 경우 즉시 갱신
  * - 06시·18시 발표 경계를 새로 넘긴 경우 즉시 갱신
- * - 생성된 지 `maxAgeMs`(기본 10분) 이상 지난 경우 갱신
- * - 에러/부분 결측이거나 발표 직후 기상청 업로드 지연으로 이전 발표를 받은 경우 1분 후 재시도
+ * - 에러/부분 결측이거나 발표 직후 기상청 업로드 지연으로 이전 발표를 받은 경우 1분 쿨다운 후 재시도
  */
 export function isSnapshotStale(
   snapshot: {
@@ -128,7 +127,6 @@ export function isSnapshotStale(
     announcement: { param: string } | null;
   },
   now: Date,
-  maxAgeMs = 10 * 60 * 1000,
 ): boolean {
   const generatedDate = new Date(snapshot.generatedAt);
   if (Number.isNaN(generatedDate.getTime())) return true;
@@ -143,10 +141,7 @@ export function isSnapshotStale(
 
   const ageMs = now.getTime() - generatedDate.getTime();
 
-  // 3. 기본 유효 시간(10분)이 경과한 경우
-  if (ageMs >= maxAgeMs) return true;
-
-  // 4. 불완전한 상태이거나 기상청 발표 지연으로 직전 발표 본을 들고 있는 경우 1분 쿨다운 후 재조회
+  // 3. 불완전한 상태이거나 기상청 발표 지연으로 직전 발표 본을 들고 있는 경우 1분 쿨다운 후 재조회
   if (ageMs >= RETRY_COOLDOWN_MS) {
     if (snapshot.status === 'error' || snapshot.status === 'partial') return true;
     if (snapshot.status === 'ok' && snapshot.announcement && snapshot.announcement.param !== nowExpectedParam) {

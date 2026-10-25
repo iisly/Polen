@@ -1,5 +1,5 @@
 import { cacheLife, cacheTag } from 'next/cache';
-import { collectSnapshot } from '@/lib/kma/collect';
+import { collectSnapshot, probeAnnouncementReady } from '@/lib/kma/collect';
 import { formatAnnouncementParam, latestAnnouncement, secondsUntilNextBoundary } from '@/lib/time';
 import type { PollenSnapshot } from '@/types/pollen';
 
@@ -8,6 +8,13 @@ import type { PollenSnapshot } from '@/types/pollen';
  */
 export async function getFreshPollenSnapshot(now: Date = new Date()): Promise<PollenSnapshot> {
   return collectSnapshot(now, process.env.KMA_POLLEN_API_KEY ?? '');
+}
+
+/**
+ * 최신 발표 시각(`latestAnnouncement(now)`)의 데이터가 기상청에 업로드되었는지 대표 지점 1곳만 빠르게(약 150ms) 확인합니다.
+ */
+export async function isLatestAnnouncementUploaded(now: Date = new Date()): Promise<boolean> {
+  return probeAnnouncementReady(now, process.env.KMA_POLLEN_API_KEY ?? '', latestAnnouncement(now));
 }
 
 /**
@@ -35,8 +42,8 @@ export async function getPollenSnapshot(): Promise<PollenSnapshot> {
     cacheLife({ stale: 30, revalidate: 60, expire: 300 });
   } else {
     const ttl = secondsUntilNextBoundary(now);
-    const revalidate = Math.min(300, Math.max(60, ttl));
-    const expire = Math.max(300, revalidate + 60, Math.min(1800, ttl));
+    const revalidate = Math.min(900, Math.max(60, ttl));
+    const expire = Math.max(300, revalidate + 60, ttl);
     cacheLife({ stale: 60, revalidate, expire });
   }
 

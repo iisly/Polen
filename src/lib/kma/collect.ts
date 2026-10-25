@@ -62,7 +62,7 @@ function buildUrl(apiKey: string, type: PollenType, areaNo: string, time: string
 }
 
 async function fetchStationOnce(fetcher: Fetcher, url: string): Promise<StationResult> {
-  const res = await fetcher(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+  const res = await fetcher(url, { cache: 'no-store', signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
   if (!res.ok) return { ok: false, reason: `http_${res.status}` };
 
   // 인증 오류 등은 dataType=JSON이어도 XML로 응답하는 경우가 있어 text로 먼저 받습니다.

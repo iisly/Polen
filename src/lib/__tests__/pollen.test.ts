@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { parseRiskValue, aggregateStations, maxRisk } from '@/lib/kma/aggregate';
-import { toKst, latestAnnouncement, previousAnnouncement, formatAnnouncementParam } from '@/lib/time';
+import {
+  toKst,
+  latestAnnouncement,
+  previousAnnouncement,
+  formatAnnouncementParam,
+  secondsUntilNextBoundary,
+  isSnapshotStale,
+} from '@/lib/time';
 import { findClosestRegion } from '@/lib/geo';
 import { getActivePollenTypes } from '@/lib/constants';
 
@@ -64,6 +71,50 @@ describe('Pollen Pure Utilities', () => {
       const prev = previousAnnouncement(a6);
       expect(prev.hour).toBe(18);
       expect(prev.date.day).toBe(5);
+    });
+
+    it('secondsUntilNextBoundary calculates remaining seconds to 00/06/18 KST', () => {
+      // 05:55:00 KST -> 300s until 06:00 KST
+      expect(secondsUntilNextBoundary(new Date('2026-10-25T20:55:00Z'))).toBe(300);
+      // 17:50:00 KST -> 600s until 18:00 KST
+      expect(secondsUntilNextBoundary(new Date('2026-10-25T08:50:00Z'))).toBe(600);
+      // 23:59:00 KST -> 60s until 24:00 (00:00) KST
+      expect(secondsUntilNextBoundary(new Date('2026-10-25T14:59:00Z'))).toBe(60);
+    });
+
+    it('isSnapshotStale detects midnight, 06/18 announcement transitions, and fallback retries', () => {
+      // 1. Fresh snapshot within same slot
+      const snap1 = {
+        status: 'ok',
+        generatedAt: '2026-10-25T15:40:00Z', // 2026-10-26 00:40 KST
+        announcement: { param: '2026102518' },
+      };
+      expect(isSnapshotStale(snap1, new Date('2026-10-25T15:42:00Z'))).toBe(false);
+
+      // 2. Crossed midnight (23:58 KST -> 00:01 KST)
+      const beforeMidnight = {
+        status: 'ok',
+        generatedAt: '2026-10-25T14:58:00Z', // 2026-10-25 23:58 KST
+        announcement: { param: '2026102518' },
+      };
+      expect(isSnapshotStale(beforeMidnight, new Date('2026-10-25T15:01:00Z'))).toBe(true);
+
+      // 3. Crossed 18:00 announcement boundary (17:59 KST -> 18:00:10 KST)
+      const before18 = {
+        status: 'ok',
+        generatedAt: '2026-10-25T08:59:00Z', // 2026-10-25 17:59 KST
+        announcement: { param: '2026102506' },
+      };
+      expect(isSnapshotStale(before18, new Date('2026-10-25T09:00:10Z'))).toBe(true);
+
+      // 4. Fallback announcement right after 18:00 waits 60s cooldown before retry
+      const fallbackAt1801 = {
+        status: 'ok',
+        generatedAt: '2026-10-25T09:01:00Z', // 2026-10-25 18:01:00 KST
+        announcement: { param: '2026102506' },
+      };
+      expect(isSnapshotStale(fallbackAt1801, new Date('2026-10-25T09:01:20Z'))).toBe(false);
+      expect(isSnapshotStale(fallbackAt1801, new Date('2026-10-25T09:02:05Z'))).toBe(true);
     });
   });
 

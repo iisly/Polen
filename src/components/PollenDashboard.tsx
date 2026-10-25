@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Header from '@/components/Header';
 import KoreaMap from '@/components/KoreaMap';
 import PollenSummaryCard from '@/components/PollenSummaryCard';
 import AntihistamineGuide from '@/components/AntihistamineGuide';
 import PollenCalendar from '@/components/PollenCalendar';
 import { REGIONS } from '@/lib/constants';
+import { formatKstTime, isSnapshotStale } from '@/lib/time';
 import { Region, PollenSnapshot, RiskValue } from '@/types/pollen';
 import { AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -17,38 +18,92 @@ interface PollenDashboardProps {
 
 export default function PollenDashboard({ initialSnapshot }: PollenDashboardProps) {
   const router = useRouter();
-  const [snapshot, setSnapshot] = useState<PollenSnapshot>(initialSnapshot);
+  const [clientSnapshot, setClientSnapshot] = useState<PollenSnapshot | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<Region>(REGIONS[0]);
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
-  const [isPending, startTransition] = useTransition();
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [hasManualRefresh, setHasManualRefresh] = useState<boolean>(false);
+  const isFetchingRef = useRef<boolean>(false);
+
+  const snapshot =
+    clientSnapshot && clientSnapshot.generatedAt >= initialSnapshot.generatedAt
+      ? clientSnapshot
+      : initialSnapshot;
+
+  const fetchAndApplySnapshot = useCallback(async (): Promise<boolean> => {
+    if (isFetchingRef.current) return false;
+    isFetchingRef.current = true;
+    try {
+      const res = await fetch('/api/pollen?fresh=1', { cache: 'no-store' });
+      if (res.ok) {
+        const fresh: PollenSnapshot = await res.json();
+        setClientSnapshot(fresh);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Refresh error:', err);
+      return false;
+    } finally {
+      isFetchingRef.current = false;
+    }
+  }, []);
+
+  // 초기 프리렌더/캐시 스냅샷이 자정·발표시각(06·18시) 경계를 지났거나 오래된 경우 즉시 백그라운드 갱신합니다.
+  useEffect(() => {
+    const checkAndSync = () => {
+      if (isSnapshotStale(snapshot, new Date())) {
+        void fetchAndApplySnapshot();
+      }
+    };
+
+    const timer = window.setTimeout(checkAndSync, 0);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkAndSync();
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [snapshot, fetchAndApplySnapshot]);
 
   const handleRefresh = async () => {
-    startTransition(async () => {
-      try {
-        const res = await fetch('/api/pollen', { cache: 'no-store' });
-        if (res.ok) {
-          const fresh: PollenSnapshot = await res.json();
-          setSnapshot(fresh);
-        }
-      } catch (err) {
-        console.error('Refresh error:', err);
+    if (isFetchingRef.current) return;
+    setIsRefreshing(true);
+    try {
+      const updated = await fetchAndApplySnapshot();
+      if (updated) {
+        setHasManualRefresh(true);
+        router.refresh();
       }
-      router.refresh();
-    });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const days = snapshot.days;
-  const currentDayInfo = days[selectedDayIndex] || days[0];
+  const safeDayIndex = selectedDayIndex < days.length ? selectedDayIndex : 0;
+  const currentDayInfo = days[safeDayIndex] || days[0];
 
   // 선택된 날짜에 대한 전국 17개 시·도 위험도 맵 생성
   const regionalRisks: Record<string, RiskValue> = {};
   for (const reg of REGIONS) {
     const regForecast = snapshot.regions[reg.code];
-    regionalRisks[reg.code] = regForecast?.overall[selectedDayIndex] ?? null;
+    regionalRisks[reg.code] = regForecast?.overall[safeDayIndex] ?? null;
   }
 
   const selectedRegionForecast = snapshot.regions[selectedRegion.code];
   const isConnected = snapshot.status === 'ok' || snapshot.status === 'partial';
+
+  const generatedDate = new Date(snapshot.generatedAt);
+  const lastCheckedText = !Number.isNaN(generatedDate.getTime())
+    ? `${formatKstTime(generatedDate, hasManualRefresh)} ${hasManualRefresh ? '갱신' : '확인'}`
+    : undefined;
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-[#2D2A26] flex flex-col font-sans selection:bg-[#EAE4D9]">
@@ -56,8 +111,9 @@ export default function PollenDashboard({ initialSnapshot }: PollenDashboardProp
       <Header
         isLiveConnected={isConnected}
         forecastDate={snapshot.announcement?.label ?? '미발표'}
+        lastCheckedText={lastCheckedText}
         onRefresh={handleRefresh}
-        isLoading={isPending}
+        isLoading={isRefreshing}
       />
 
       {/* 메인 콘텐츠 영역 */}
@@ -99,7 +155,7 @@ export default function PollenDashboard({ initialSnapshot }: PollenDashboardProp
               region={selectedRegion}
               forecastDate={snapshot.announcement?.label ?? '예보 준비 중'}
               days={days}
-              selectedDayIndex={selectedDayIndex}
+              selectedDayIndex={safeDayIndex}
               onSelectDayIndex={setSelectedDayIndex}
               regionForecast={selectedRegionForecast}
             />

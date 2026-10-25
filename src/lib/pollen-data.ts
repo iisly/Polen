@@ -1,25 +1,43 @@
 import { cacheLife, cacheTag } from 'next/cache';
 import { collectSnapshot } from '@/lib/kma/collect';
+import { formatAnnouncementParam, latestAnnouncement, secondsUntilNextBoundary } from '@/lib/time';
 import type { PollenSnapshot } from '@/types/pollen';
+
+/**
+ * 캐시를 거치지 않고 기상청에서 즉시 최신 꽃가루 스냅샷을 수집합니다.
+ */
+export async function getFreshPollenSnapshot(now: Date = new Date()): Promise<PollenSnapshot> {
+  return collectSnapshot(now, process.env.KMA_POLLEN_API_KEY ?? '');
+}
 
 /**
  * 전국 꽃가루 스냅샷 (캐시됨).
  *
- * 기상청 데이터는 하루 2회(06시·18시)만 바뀌므로, 요청마다 기상청을 호출하지 않고
- * 이 함수의 결과를 모든 사용자가 공유합니다. 페이지와 `/api/pollen`이 모두 이 함수를 사용하며,
- * 결과는 프리렌더된 정적 응답에 포함되어 `revalidate` 주기마다 백그라운드에서 갱신됩니다.
+ * 기상청 데이터는 하루 2회(06시·18시) 발표되며 자정(00시)에 일자 라벨이 바뀌므로,
+ * 다음 경계 시각(00·06·18시)을 넘겨 캐시되지 않도록 수명을 동적으로 제한합니다.
+ * 또한 06·18시 직후 기상청 업로드 지연으로 직전 발표 본으로 대체된 경우에는
+ * 1분 주기로 빠르게 재확인하여 최신 발표가 즉시 반영되도록 합니다.
  */
 export async function getPollenSnapshot(): Promise<PollenSnapshot> {
   'use cache';
   cacheTag('pollen-snapshot');
 
-  const snapshot = await collectSnapshot(new Date(), process.env.KMA_POLLEN_API_KEY ?? '');
+  const now = new Date();
+  const snapshot = await collectSnapshot(now, process.env.KMA_POLLEN_API_KEY ?? '');
+  const expectedParam = formatAnnouncementParam(latestAnnouncement(now));
+  const isFallbackAnnouncement =
+    snapshot.status === 'ok' &&
+    snapshot.announcement !== null &&
+    snapshot.announcement.param !== expectedParam;
 
-  if (snapshot.status === 'partial' || snapshot.status === 'error') {
-    // 불완전한 결과는 짧게만 캐시해서 빠르게 복구되도록 합니다.
-    cacheLife({ stale: 60, revalidate: 300, expire: 3600 });
+  if (snapshot.status === 'partial' || snapshot.status === 'error' || isFallbackAnnouncement) {
+    // 불완전한 결과이거나 새 발표 시각 직후 기상청 업로드 지연으로 직전 발표를 받은 경우 짧게만 캐시합니다.
+    cacheLife({ stale: 30, revalidate: 60, expire: 300 });
   } else {
-    cacheLife({ stale: 300, revalidate: 1800, expire: 86400 });
+    const ttl = secondsUntilNextBoundary(now);
+    const revalidate = Math.min(300, Math.max(60, ttl));
+    const expire = Math.max(300, revalidate + 60, Math.min(1800, ttl));
+    cacheLife({ stale: 60, revalidate, expire });
   }
 
   return snapshot;

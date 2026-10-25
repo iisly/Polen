@@ -6,6 +6,7 @@ import { RotateCw } from 'lucide-react';
 interface HeaderProps {
   isLiveConnected: boolean;
   forecastDate?: string;
+  lastCheckedText?: string;
   onRefresh?: () => void;
   isLoading?: boolean;
 }
@@ -13,6 +14,7 @@ interface HeaderProps {
 export default function Header({
   isLiveConnected,
   forecastDate,
+  lastCheckedText,
   onRefresh,
   isLoading = false,
 }: HeaderProps) {
@@ -33,12 +35,18 @@ export default function Header({
         </div>
 
         {/* 우측 컨트롤 */}
-        <div className="flex items-center gap-3 text-sm text-[#5C554E]">
-          {/* 발표 시각 안내 */}
+        <div className="flex items-center gap-2.5 sm:gap-3 text-sm text-[#5C554E]">
+          {/* 발표 시각 및 최근 확인 시각 안내 */}
           {forecastDate && (
-            <span className="text-xs text-[#8C827A] hidden md:inline">
-              {forecastDate}
-            </span>
+            <div
+              className="hidden sm:flex items-center gap-1.5 text-xs text-[#8C827A]"
+              title="기상청 꽃가루 위험지수는 매일 06:00, 18:00 하루 2회 발표됩니다"
+            >
+              <span>{isLoading ? '기상청 동기화 중...' : forecastDate}</span>
+              {!isLoading && lastCheckedText && (
+                <span className="text-[#A69C93]">· {lastCheckedText}</span>
+              )}
+            </div>
           )}
 
           {/* 상태 배지 */}
@@ -51,13 +59,14 @@ export default function Header({
 
           {onRefresh && (
             <button
+              type="button"
               onClick={onRefresh}
               disabled={isLoading}
-              className="p-2 text-[#7A726A] hover:text-[#2D2A26] hover:bg-[#F0ECE4] rounded-lg transition"
-              title="새로고침"
+              className="p-2 text-[#7A726A] hover:text-[#2D2A26] hover:bg-[#F0ECE4] active:scale-95 disabled:opacity-60 rounded-lg transition cursor-pointer"
+              title="기상청 최신 데이터 다시 조회 (일 2회 06·18시 발표)"
               aria-label="데이터 새로고침"
             >
-              <RotateCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RotateCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-[#2D2A26]' : ''}`} />
             </button>
           )}
         </div>
